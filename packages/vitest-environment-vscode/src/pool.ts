@@ -275,10 +275,11 @@ export default async function createVsCodePool(
 		//Add to debug "--inspect-brk-extensions=9229"
 		launchArgs: [
 			'--disable-extensions',
+			'--disable-gpu',
+			'--no-sandbox',
 			'--log',
 			'off',
 			'--logsPath',
-			// '--inspect-brk-extensions=9229',
 			path.resolve(workspaceRoot, '.vscode-test', 'logs'),
 		],
 	}).catch((error) => {
