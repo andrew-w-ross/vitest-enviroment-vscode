@@ -271,6 +271,7 @@ export default async function createVsCodePool(
 		extensionTestsPath: workerEntryPath,
 		extensionTestsEnv: {
 			VITEST_VSCODE_PORT: port.toString(),
+			...(process.env.DISPLAY && { DISPLAY: process.env.DISPLAY }),
 		},
 		//Add to debug "--inspect-brk-extensions=9229"
 		launchArgs: [
