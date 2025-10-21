@@ -1,0 +1,9 @@
+{
+	"extends": "@repo/typescript-configs/tsconfig.app.json",
+	"include": [
+		"src"
+	],
+	"exclude": [
+		"src/**/*.{test,spec}.ts"
+	]
+}

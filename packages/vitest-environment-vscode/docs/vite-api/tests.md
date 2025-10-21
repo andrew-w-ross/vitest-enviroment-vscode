@@ -12,18 +12,18 @@ Vitest exposes two methods to initiate Vitest:
 ## `startVitest`
 
 ```ts
-import { startVitest } from 'vitest/node'
+import { startVitest } from 'vitest/node';
 
 const vitest = await startVitest(
-  'test',
-  [], // CLI filters
-  {}, // override test config
-  {}, // override Vite config
-  {}, // custom Vitest options
-)
-const testModules = vitest.state.getTestModules()
+	'test',
+	[], // CLI filters
+	{}, // override test config
+	{}, // override Vite config
+	{} // custom Vitest options
+);
+const testModules = vitest.state.getTestModules();
 for (const testModule of testModules) {
-  console.log(testModule.moduleId, testModule.ok() ? 'passed' : 'failed')
+	console.log(testModule.moduleId, testModule.ok() ? 'passed' : 'failed');
 }
 ```
 
@@ -38,34 +38,32 @@ Creates a [Vitest](/advanced/api/vitest) instances without running tests.
 `createVitest` method doesn't validate that required packages are installed. It also doesn't respect `config.standalone` or `config.mergeReports`. Vitest won't be closed automatically even if `watch` is disabled.
 
 ```ts
-import { createVitest } from 'vitest/node'
+import { createVitest } from 'vitest/node';
 
 const vitest = await createVitest(
-  'test',
-  {}, // override test config
-  {}, // override Vite config
-  {}, // custom Vitest options
-)
+	'test',
+	{}, // override test config
+	{}, // override Vite config
+	{} // custom Vitest options
+);
 
 // called when `vitest.cancelCurrentRun()` is invoked
-vitest.onCancel(() => {})
+vitest.onCancel(() => {});
 // called during `vitest.close()` call
-vitest.onClose(() => {})
+vitest.onClose(() => {});
 // called when Vitest reruns test files
-vitest.onTestsRerun((files) => {})
+vitest.onTestsRerun((files) => {});
 
 try {
-  // this will set process.exitCode to 1 if tests failed,
-  // and won't close the process automatically
-  await vitest.start(['my-filter'])
-}
-catch (err) {
-  // this can throw
-  // "FilesNotFoundError" if no files were found
-  // "GitNotFoundError" with `--changed` and repository is not initialized
-}
-finally {
-  await vitest.close()
+	// this will set process.exitCode to 1 if tests failed,
+	// and won't close the process automatically
+	await vitest.start(['my-filter']);
+} catch (err) {
+	// this can throw
+	// "FilesNotFoundError" if no files were found
+	// "GitNotFoundError" with `--changed` and repository is not initialized
+} finally {
+	await vitest.close();
 }
 ```
 
@@ -75,14 +73,14 @@ After reporters are initialised, use [`runTestSpecifications`](/advanced/api/vit
 
 ```ts
 watcher.on('change', async (file) => {
-  const specifications = vitest.getModuleSpecifications(file)
-  if (specifications.length) {
-    vitest.invalidateFile(file)
-    // you can use runTestSpecifications if "reporter.onWatcher*" hooks
-    // should not be invoked
-    await vitest.rerunTestSpecifications(specifications)
-  }
-})
+	const specifications = vitest.getModuleSpecifications(file);
+	if (specifications.length) {
+		vitest.invalidateFile(file);
+		// you can use runTestSpecifications if "reporter.onWatcher*" hooks
+		// should not be invoked
+		await vitest.rerunTestSpecifications(specifications);
+	}
+});
 ```
 
 ::: warning
@@ -92,38 +90,39 @@ Also note that `getModuleSpecifications` will not resolve test files unless they
 
 ```ts
 watcher.on('add', async (file) => {
-  const specifications = []
-  for (const project of vitest.projects) {
-    if (project.matchesGlobPattern(file)) {
-      specifications.push(project.createSpecification(file))
-    }
-  }
+	const specifications = [];
+	for (const project of vitest.projects) {
+		if (project.matchesGlobPattern(file)) {
+			specifications.push(project.createSpecification(file));
+		}
+	}
 
-  if (specifications.length) {
-    await vitest.rerunTestSpecifications(specifications)
-  }
-})
+	if (specifications.length) {
+		await vitest.rerunTestSpecifications(specifications);
+	}
+});
 ```
+
 :::
 
 In cases where you need to disable the watcher, you can pass down `server.watch: null` since Vite 5.3 or `server.watch: { ignored: ['*/*'] }` to a Vite config:
 
 ```ts
 await createVitest(
-  'test',
-  {},
-  {
-    plugins: [
-      {
-        name: 'stop-watcher',
-        async configureServer(server) {
-          await server.watcher.close()
-        }
-      }
-    ],
-    server: {
-      watch: null,
-    },
-  }
-)
+	'test',
+	{},
+	{
+		plugins: [
+			{
+				name: 'stop-watcher',
+				async configureServer(server) {
+					await server.watcher.close();
+				},
+			},
+		],
+		server: {
+			watch: null,
+		},
+	}
+);
 ```

@@ -1,0 +1,82 @@
+{
+	// Combined launch configurations for this workspace.
+	// - Vitest: debug current file, debug all tests, attach to a running process.
+	// - ExtensionHost: existing configs for the dummy extension and worker debug.
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"type": "node",
+			"request": "launch",
+			"name": "Run Integration Tests",
+			"autoAttachChildProcesses": true,
+			"cwd": "${workspaceFolder}/packages/dummy-extension",
+			"skipFiles": [
+				"<node_internals>/**",
+				"**/node_modules/**"
+			],
+			"program": "${workspaceRoot}/node_modules/vitest/vitest.mjs",
+			"args": [
+				"run"
+			],
+			"smartStep": true,
+			"console": "integratedTerminal"
+		},
+		{
+			"name": "Dummy Extension",
+			"type": "extensionHost",
+			"request": "launch",
+			"runtimeExecutable": "${execPath}",
+			"args": [
+				"--extensionDevelopmentPath=${workspaceFolder}/packages/dummy-extension"
+			]
+		},
+		{
+			"name": "Worker Debug",
+			"type": "extensionHost",
+			"request": "launch",
+			"preLaunchTask": "build:watch vitest-enviroment-vscode",
+			"runtimeExecutable": "${execPath}",
+			"args": [
+				"--extensionDevelopmentPath=${workspaceFolder}/packages/dummy-extension",
+				"--extensionTestsPath=${workspaceFolder}/packages/vitest-environment-vscode/dist/worker-entry"
+			],
+			"outFiles": [
+				"${workspaceFolder}/packages/vitest-environment-vscode/dist/**/*.js"
+			]
+		},
+		{
+			"name": "Attach Worker",
+			"type": "node",
+			"request": "attach",
+			"port": 9229,
+			"address": "localhost",
+			"localRoot": "${workspaceFolder}",
+			"remoteRoot": "${workspaceFolder}",
+			"outFiles": [
+				"${workspaceFolder}/packages/vitest-environment-vscode/dist/**/*.js"
+			],
+			"skipFiles": [
+				"<node_internals>/**",
+				"**/node_modules/**",
+				"**/bootstrap-fork.js",
+				"**/extensionHostProcess.js",
+				"**/@vscode/**/out/**/*.js"
+			],
+			"restart": {
+				"maxAttempts": 5
+			},
+			"smartStep": true,
+			"timeout": 30000,
+			"continueOnAttach": true
+		}
+	],
+	"compounds": [
+		{
+			"name": "Integration + Attach",
+			"configurations": [
+				"Run Integration Tests",
+				"Attach Worker"
+			]
+		}
+	]
+}

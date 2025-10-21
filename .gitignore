@@ -12,6 +12,10 @@ dist/
 
 # TypeScript
 *.tsbuildinfo
+.cache/
+
+# Turborepo
+.turbo
 
 # Yarn
 .pnp.*
@@ -21,3 +25,5 @@ dist/
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+.vscode-test

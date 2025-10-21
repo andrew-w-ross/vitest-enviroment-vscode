@@ -15,37 +15,37 @@ Vitest runs tests in pools. By default, there are several pools:
 You can provide your own pool by specifying a file path:
 
 ```ts [vitest.config.ts]
-import { defineConfig } from 'vitest/config'
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  test: {
-    // will run every file with a custom pool by default
-    pool: './my-custom-pool.ts',
-    // you can provide options using `poolOptions` object
-    poolOptions: {
-      myCustomPool: {
-        customProperty: true,
-      },
-    },
-  },
-})
+	test: {
+		// will run every file with a custom pool by default
+		pool: './my-custom-pool.ts',
+		// you can provide options using `poolOptions` object
+		poolOptions: {
+			myCustomPool: {
+				customProperty: true,
+			},
+		},
+	},
+});
 ```
 
 If you need to run tests in different pools, use the [`projects`](/guide/projects) feature:
 
 ```ts [vitest.config.ts]
 export default defineConfig({
-  test: {
-    projects: [
-      {
-        extends: true,
-        test: {
-          pool: 'threads',
-        },
-      },
-    ],
-  },
-})
+	test: {
+		projects: [
+			{
+				extends: true,
+				test: {
+					pool: 'threads',
+				},
+			},
+		],
+	},
+});
 ```
 
 ## API
@@ -53,13 +53,13 @@ export default defineConfig({
 The file specified in `pool` option should export a function (can be async) that accepts `Vitest` interface as its first option. This function needs to return an object matching `ProcessPool` interface:
 
 ```ts
-import type { ProcessPool, TestSpecification } from 'vitest/node'
+import type { ProcessPool, TestSpecification } from 'vitest/node';
 
 export interface ProcessPool {
-  name: string
-  runTests: (files: TestSpecification[], invalidates?: string[]) => Promise<void>
-  collectTests: (files: TestSpecification[], invalidates?: string[]) => Promise<void>
-  close?: () => Promise<void>
+	name: string;
+	runTests: (files: TestSpecification[], invalidates?: string[]) => Promise<void>;
+	collectTests: (files: TestSpecification[], invalidates?: string[]) => Promise<void>;
+	close?: () => Promise<void>;
 }
 ```
 
@@ -76,20 +76,17 @@ Vitest will call `collectTests` if `vitest.collect` is called or `vitest list` i
 To communicate between different processes, you can create methods object using `createMethodsRPC` from `vitest/node`, and use any form of communication that you prefer. For example, to use WebSockets with `birpc` you can write something like this:
 
 ```ts
-import { createBirpc } from 'birpc'
-import { parse, stringify } from 'flatted'
-import { createMethodsRPC, TestProject } from 'vitest/node'
+import { createBirpc } from 'birpc';
+import { parse, stringify } from 'flatted';
+import { createMethodsRPC, TestProject } from 'vitest/node';
 
 function createRpc(project: TestProject, wss: WebSocketServer) {
-  return createBirpc(
-    createMethodsRPC(project),
-    {
-      post: msg => wss.send(msg),
-      on: fn => wss.on('message', fn),
-      serialize: stringify,
-      deserialize: parse,
-    },
-  )
+	return createBirpc(createMethodsRPC(project), {
+		post: (msg) => wss.send(msg),
+		on: (fn) => wss.on('message', fn),
+		serialize: stringify,
+		deserialize: parse,
+	});
 }
 ```
 

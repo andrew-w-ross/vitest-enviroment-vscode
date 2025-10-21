@@ -5,8 +5,9 @@ import tseslint from 'typescript-eslint';
 import { includeIgnoreFile } from '@eslint/compat';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'eslint/config';
-import globals from 'globals';
 import prettierConfig from 'eslint-config-prettier';
+import turboConfig from 'eslint-config-turbo/flat';
+import globals from 'globals';
 
 const gitignorePath = fileURLToPath(new URL('.gitignore', import.meta.url));
 
@@ -15,17 +16,23 @@ export default defineConfig(
 	eslint.configs.recommended,
 	...tseslint.configs.recommendedTypeChecked,
 	...tseslint.configs.stylistic,
+	...turboConfig,
 	{
+		rules: {
+			'@typescript-eslint/consistent-type-definitions': ['error', 'type'],
+		},
 		languageOptions: {
-			globals: {
-				...globals.node,
-			},
 			parserOptions: {
-				projectService: {
-					allowDefaultProject: ['*.js', '*.ts'],
-				},
+				projectService: true,
 				tsconfigRootDir: import.meta.dirname,
 			},
+		},
+	},
+	{
+		files: ['**/*.js'],
+		extends: [tseslint.configs.disableTypeChecked],
+		languageOptions: {
+			globals: globals.node,
 		},
 	},
 	prettierConfig

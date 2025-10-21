@@ -1,0 +1,21 @@
+{
+	"extends": "./tsconfig.base.json",
+	"compilerOptions": {
+		"module": "esnext",
+		"target": "esnext",
+		"moduleResolution": "bundler",
+		"types": [
+			"node"
+		],
+		"composite": true,
+		"declaration": true,
+		"declarationMap": true,
+		"emitDeclarationOnly": true,
+		"allowImportingTsExtensions": true,
+		"allowArbitraryExtensions": true,
+		"noUncheckedIndexedAccess": true,
+		"rootDir": "${configDir}/src",
+		"outDir": "${configDir}/dist",
+		"tsBuildInfoFile": "${configDir}/node_modules/.cache/tsbuildinfo/tsconfig.app.tsbuildinfo"
+	}
+}

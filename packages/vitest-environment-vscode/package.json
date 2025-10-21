@@ -1,0 +1,62 @@
+{
+  "name": "vitest-environment-vscode",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "A Vitest environment for VS Code",
+  "main": "./dist/pool",
+  "types": "./dist/pool.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/pool.d.ts",
+      "import": "./dist/pool"
+    },
+    "./pool": {
+      "types": "./dist/pool.d.ts",
+      "import": "./dist/pool"
+    },
+    "./worker-entry": {
+      "types": "./dist/worker-entry.d.ts",
+      "import": "./dist/worker-entry"
+    },
+    "./vscode-worker": {
+      "types": "./dist/vscode-worker.d.ts",
+      "import": "./dist/vscode-worker"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build --mode development",
+    "build:watch": "vite build --mode development --watch",
+    "prerelease": "yarn build && yarn typecheck",
+    "typecheck": "tsc --build",
+    "typecheck:watch": "tsc --build --watch",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "vitest",
+    "vscode",
+    "environment"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@repo/typescript-configs": "workspace:*",
+    "@types/node": "^24.8.1",
+    "@types/vscode": "^1.105.0",
+    "@types/ws": "^8",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.10",
+    "vitest": "^3.2.4"
+  },
+  "peerDependencies": {
+    "vitest": ">=3.2.4"
+  },
+  "dependencies": {
+    "@vscode/test-electron": "^2.5.2",
+    "birpc": "^2.6.1",
+    "ws": "^8.18.3"
+  }
+}

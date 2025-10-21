@@ -1,0 +1,71 @@
+{
+	"$schema": "https://turbo.build/schema.json",
+	"ui": "stream",
+	"tasks": {
+		"build": {
+			"dependsOn": [
+				"^build"
+			],
+			"outputs": [
+				"dist/**",
+				".vite/**"
+			]
+		},
+		"build:watch": {
+			"dependsOn": [
+				"^build"
+			],
+			"cache": false,
+			"persistent": true
+		},
+		"typecheck": {
+			"dependsOn": [
+				"^build"
+			],
+			"outputs": []
+		},
+		"typecheck:watch": {
+			"cache": false,
+			"persistent": true
+		},
+		"test": {
+			"dependsOn": [
+				"build"
+			],
+			"outputs": []
+		},
+		"test:watch": {
+			"dependsOn": [
+				"build"
+			],
+			"cache": false,
+			"persistent": true
+		},
+		"lint": {
+			"dependsOn": [
+				"^build"
+			],
+			"outputs": []
+		},
+		"lint:fix": {
+			"dependsOn": [
+				"^build"
+			],
+			"cache": false,
+			"outputs": []
+		},
+		"prerelease": {
+			"dependsOn": [
+				"^build",
+				"build"
+			],
+			"outputs": [
+				"dist/**"
+			]
+		},
+		"dev": {
+			"cache": false,
+			"persistent": true
+		}
+	}
+}

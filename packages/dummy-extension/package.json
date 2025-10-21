@@ -1,0 +1,36 @@
+{
+	"name": "dummy-extension",
+	"displayName": "Dummy Extension",
+	"version": "0.0.1",
+	"type": "module",
+	"private": true,
+	"engines": {
+		"vscode": "^1.105.0"
+	},
+	"main": "./dist/extension.js",
+	"scripts": {
+		"build": "vite build",
+		"build:watch": "vite build --watch",
+		"typecheck": "tsc --build",
+		"typecheck:watch": "tsc --build --watch",
+		"test": "vitest run",
+		"test:watch": "vitest"
+	},
+	"contributes": {
+		"commands": [
+			{
+				"command": "dummy-extension.helloWorld",
+				"title": "Dummy Hello World"
+			}
+		]
+	},
+	"devDependencies": {
+		"@repo/typescript-configs": "workspace:*",
+		"@types/node": "^24.8.1",
+		"@types/vscode": "^1.105.0",
+		"typescript": "^5.9.3",
+		"vite": "^7.1.10",
+		"vitest": "^3.2.4",
+		"vitest-environment-vscode": "workspace:*"
+	}
+}

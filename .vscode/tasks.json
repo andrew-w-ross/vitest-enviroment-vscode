@@ -1,0 +1,99 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "build",
+			"type": "shell",
+			"command": "yarn build",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "build:watch vitest-enviroment-vscode",
+			"type": "shell",
+			"command": "yarn turbo run build:watch --filter=vitest-environment-vscode",
+			"isBackground": true,
+			"problemMatcher": {
+				"pattern": {
+					"regexp": "^(.*)$",
+					"file": 1
+				},
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": "vitest-environment-vscode#build:watch",
+					"endsPattern": "built in|watching for file changes"
+				}
+			}
+		},
+		{
+			"label": "typecheck",
+			"type": "shell",
+			"command": "yarn typecheck",
+			"group": "build",
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "typecheck:watch",
+			"type": "shell",
+			"command": "yarn typecheck:watch",
+			"isBackground": true,
+			"problemMatcher": [
+				"$tsc-watch"
+			]
+		},
+		{
+			"label": "test:unit",
+			"type": "shell",
+			"command": "yarn test:unit",
+			"group": "test",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "test:unit:run",
+			"type": "shell",
+			"command": "yarn test:unit:run",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "test:integration",
+			"type": "shell",
+			"command": "yarn test:integration",
+			"group": "test",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "test:integration:run",
+			"type": "shell",
+			"command": "yarn test:integration:run",
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "lint",
+			"type": "shell",
+			"command": "yarn lint",
+			"problemMatcher": [
+				"$eslint-stylish"
+			]
+		},
+		{
+			"label": "lint:fix",
+			"type": "shell",
+			"command": "yarn lint:fix",
+			"problemMatcher": [
+				"$eslint-stylish"
+			]
+		}
+	]
+}

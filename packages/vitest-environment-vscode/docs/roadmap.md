@@ -5,6 +5,7 @@ This roadmap complements the architectural details in `docs/design.md`. It track
 ## Implementation Phases
 
 ### Phase 1: Proof of Concept (MVP)
+
 - [ ] Basic pool structure implementing `ProcessPool`
 - [ ] VS Code instance launching with `@vscode/test-electron`
 - [ ] Worker script that runs inside the Extension Host
@@ -12,11 +13,13 @@ This roadmap complements the architectural details in `docs/design.md`. It track
 - [ ] Single test file execution
 
 **Deliverables**
+
 - Pool launches VS Code and runs one simple test
 - Test reaches `vscode.window.showInformationMessage`
 - Results surface back to the Vitest main process
 
 ### Phase 2: Core Functionality
+
 - [ ] Full `createMethodsRPC` integration
 - [ ] Multiple test file support
 - [ ] Workspace management
@@ -25,11 +28,13 @@ This roadmap complements the architectural details in `docs/design.md`. It track
 - [ ] Configuration options
 
 **Deliverables**
+
 - Support for common test patterns across multiple files
 - Accurate error reporting
 - Configurable pool behavior
 
 ### Phase 3: Advanced Features
+
 - [ ] Instance pooling for parallel execution
 - [ ] Watch mode support
 - [ ] Coverage reporting integration
@@ -37,11 +42,13 @@ This roadmap complements the architectural details in `docs/design.md`. It track
 - [ ] Custom runner for VS Code-specific features
 
 **Deliverables**
+
 - Production-ready pool
 - Comprehensive documentation
 - Reference example projects
 
 ### Phase 4: Ecosystem Integration
+
 - [ ] Migration guide from `@vscode/test-electron`
 - [ ] CI/CD integration examples
 - [ ] Performance benchmarks vs traditional approach
@@ -50,22 +57,22 @@ This roadmap complements the architectural details in `docs/design.md`. It track
 ## Success Metrics
 
 1. **Developer Adoption**
-   - GitHub stars, npm downloads
-   - VS Code marketplace extensions using the pool
+    - GitHub stars, npm downloads
+    - VS Code marketplace extensions using the pool
 
 2. **Performance**
-   - Test execution speed vs `@vscode/test-electron`
-   - Startup time < 5 seconds
-   - API call overhead < 10ms average
+    - Test execution speed vs `@vscode/test-electron`
+    - Startup time < 5 seconds
+    - API call overhead < 10ms average
 
 3. **Reliability**
-   - CI/CD success rates
-   - Issue reports and bug frequency
+    - CI/CD success rates
+    - Issue reports and bug frequency
 
 4. **DX Quality**
-   - Documentation completeness
-   - Example coverage
-   - Community feedback sentiment
+    - Documentation completeness
+    - Example coverage
+    - Community feedback sentiment
 
 ## Future Enhancements
 

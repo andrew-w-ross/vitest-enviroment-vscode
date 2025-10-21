@@ -1,0 +1,12 @@
+{
+	"extends": "@repo/typescript-configs/tsconfig.test.json",
+	"references": [
+		{
+			"path": "./tsconfig.app.json"
+		}
+	],
+	"include": [
+		"tests",
+		"src/**/*.{test,spec}.ts"
+	]
+}
