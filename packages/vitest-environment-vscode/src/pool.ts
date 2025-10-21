@@ -275,12 +275,6 @@ export default async function createVsCodePool(
 		//Add to debug "--inspect-brk-extensions=9229"
 		launchArgs: [
 			'--disable-extensions',
-			'--disable-gpu',
-			'--disable-dev-shm-usage',
-			'--no-sandbox',
-			'--disable-software-rasterizer',
-			'--disable-setuid-sandbox',
-			'--use-gl=swiftshader',
 			'--log',
 			'off',
 			'--logsPath',

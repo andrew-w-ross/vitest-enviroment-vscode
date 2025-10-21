@@ -33,42 +33,23 @@
 			"type": "shell",
 			"command": "yarn typecheck",
 			"group": "build",
-			"problemMatcher": ["$tsc"]
+			"problemMatcher": [
+				"$tsc"
+			]
 		},
 		{
 			"label": "typecheck:watch",
 			"type": "shell",
 			"command": "yarn typecheck:watch",
 			"isBackground": true,
-			"problemMatcher": ["$tsc-watch"]
+			"problemMatcher": [
+				"$tsc-watch"
+			]
 		},
 		{
-			"label": "test:unit",
+			"label": "test",
 			"type": "shell",
-			"command": "yarn test:unit",
-			"group": "test",
-			"isBackground": true,
-			"problemMatcher": []
-		},
-		{
-			"label": "test:unit:run",
-			"type": "shell",
-			"command": "yarn test:unit:run",
-			"group": "test",
-			"problemMatcher": []
-		},
-		{
-			"label": "test:integration",
-			"type": "shell",
-			"command": "yarn test:integration",
-			"group": "test",
-			"isBackground": true,
-			"problemMatcher": []
-		},
-		{
-			"label": "test:integration:run",
-			"type": "shell",
-			"command": "yarn test:integration:run",
+			"command": "yarn test",
 			"group": {
 				"kind": "test",
 				"isDefault": true
@@ -76,16 +57,28 @@
 			"problemMatcher": []
 		},
 		{
+			"label": "test:watch",
+			"type": "shell",
+			"command": "yarn test:watch",
+			"group": "test",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
 			"label": "lint",
 			"type": "shell",
 			"command": "yarn lint",
-			"problemMatcher": ["$eslint-stylish"]
+			"problemMatcher": [
+				"$eslint-stylish"
+			]
 		},
 		{
 			"label": "lint:fix",
 			"type": "shell",
 			"command": "yarn lint:fix",
-			"problemMatcher": ["$eslint-stylish"]
+			"problemMatcher": [
+				"$eslint-stylish"
+			]
 		}
 	]
 }
