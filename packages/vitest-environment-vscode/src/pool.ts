@@ -276,7 +276,9 @@ export default async function createVsCodePool(
 		launchArgs: [
 			'--disable-extensions',
 			'--disable-gpu',
+			'--disable-dev-shm-usage',
 			'--no-sandbox',
+			'--disable-software-rasterizer',
 			'--log',
 			'off',
 			'--logsPath',
