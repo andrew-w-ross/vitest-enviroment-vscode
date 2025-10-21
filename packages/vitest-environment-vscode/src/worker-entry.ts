@@ -15,45 +15,6 @@ import {
 } from './ipc';
 import { setTransport } from './worker-transport';
 
-type LogLevel = 'error' | 'warn' | 'info' | 'debug';
-
-const LOG_LEVELS: Record<LogLevel, number> = {
-	error: 0,
-	warn: 1,
-	info: 2,
-	debug: 3,
-};
-
-class WorkerLogger {
-	private level: LogLevel = 'info';
-
-	setLevel(level: LogLevel) {
-		this.level = level;
-	}
-
-	private shouldLog(level: LogLevel): boolean {
-		return LOG_LEVELS[level] <= LOG_LEVELS[this.level];
-	}
-
-	debug(message: string, ...args: unknown[]) {
-		// Logging disabled
-	}
-
-	info(message: string, ...args: unknown[]) {
-		// Logging disabled
-	}
-
-	warn(message: string, ...args: unknown[]) {
-		// Logging disabled
-	}
-
-	error(message: string, ...args: unknown[]) {
-		// Logging disabled
-	}
-}
-
-const logger = new WorkerLogger();
-
 type SerializableContext = {
 	pool: string;
 	workerId: number;
@@ -140,7 +101,6 @@ export function createWorkerRuntime(deps: WorkerRuntimeDependencies = {}) {
 		if (!socket || socket.readyState !== WebSocket.OPEN) {
 			throw new Error('IPC socket is not open');
 		}
-		logger.debug('[vitest-vscode] worker sending response', response.id, response.success);
 		socket.send(encodeEnvelope(CONTROL_CHANNEL, response));
 	};
 
@@ -173,16 +133,7 @@ export function createWorkerRuntime(deps: WorkerRuntimeDependencies = {}) {
 
 		const ctx = request.ctx as SerializableContext;
 
-		// Configure logger based on config logLevel
-		if (ctx.config.logLevel && typeof ctx.config.logLevel === 'string') {
-			logger.setLevel(ctx.config.logLevel as LogLevel);
-		}
-
 		const workerCtx = { ...ctx, worker: workerModuleUrl } as unknown as WorkerRunContext;
-
-		logger.debug(
-			`[vitest-vscode] worker handling ${request.action} with ${ctx.files.length} file(s)`
-		);
 
 		try {
 			if (request.action === 'collect') {
@@ -192,19 +143,17 @@ export function createWorkerRuntime(deps: WorkerRuntimeDependencies = {}) {
 			}
 			sendControlResponse({ id: request.id, success: true });
 		} catch (error) {
-			logger.error('[vitest-vscode] worker run failed', toErrorDetail(error));
 			sendControlResponse({ id: request.id, success: false, error: toErrorDetail(error) });
 		}
-	}; const onMessage = (raw: RawData) => {
+	};
+
+	const onMessage = (raw: RawData) => {
 		let envelope;
 		try {
 			envelope = decodeEnvelope(raw);
-		} catch (error) {
-			logger.error('[vitest-vscode] Failed to decode message', error);
+		} catch {
 			return;
 		}
-
-		logger.debug('[vitest-vscode] worker received', envelope.channel);
 
 		if (envelope.channel === RPC_CHANNEL) {
 			for (const listener of rpcListeners) {
@@ -216,11 +165,10 @@ export function createWorkerRuntime(deps: WorkerRuntimeDependencies = {}) {
 		const payload = envelope.payload;
 		if (isControlRequest(payload)) {
 			const request = payload;
-			logger.debug('[vitest-vscode] worker queued control', request.action);
 			commandQueue = commandQueue
 				.then(() => handleControlRequest(request))
-				.catch((error: unknown) => {
-					logger.error('[vitest-vscode] Failed to process control request', error);
+				.catch(() => {
+					// Silently handle control request errors
 				});
 		}
 	};
@@ -238,7 +186,6 @@ export function createWorkerRuntime(deps: WorkerRuntimeDependencies = {}) {
 
 		applyTransport({
 			post(message) {
-				logger.debug('[vitest-vscode] worker posting rpc');
 				socket!.send(encodeEnvelope(RPC_CHANNEL, message));
 			},
 			subscribe(listener) {
@@ -254,7 +201,6 @@ export function createWorkerRuntime(deps: WorkerRuntimeDependencies = {}) {
 			id: `ready-${Date.now()}`,
 			action: 'ready',
 		};
-		logger.debug('[vitest-vscode] worker sending ready signal');
 		socket.send(encodeEnvelope(CONTROL_CHANNEL, readyRequest));
 
 		// Wait for ready acknowledgment
@@ -274,7 +220,6 @@ export function createWorkerRuntime(deps: WorkerRuntimeDependencies = {}) {
 						if (response.id === readyRequest.id) {
 							clearTimeout(timeout);
 							socket!.off('message', readyHandler);
-							logger.debug('[vitest-vscode] worker received ready acknowledgment');
 							resolve();
 						}
 					}
@@ -316,9 +261,5 @@ export type WorkerRuntime = ReturnType<typeof createWorkerRuntime>;
 
 export async function run() {
 	const runtime = createWorkerRuntime();
-	const vscode = await import('vscode');
-	if (vscode === null || vscode.window.createInputBox == null) {
-		throw new Error("so vscode isn't here");
-	}
 	return await runtime.run();
 }
