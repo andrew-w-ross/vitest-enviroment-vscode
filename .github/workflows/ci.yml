@@ -39,4 +39,6 @@ jobs:
         run: yarn build
 
       - name: Run tests
-        run: xvfb-run -a --server-args="-screen 0 1024x768x24" yarn test
+        run: xvfb-run -a yarn test
+        env:
+          DISPLAY: ':99'
