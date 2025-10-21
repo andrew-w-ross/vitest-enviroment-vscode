@@ -1,4 +1,5 @@
 export type DisposeFn<T> = (value: T) => unknown;
+export type Disposable<T extends object> = ReturnType<typeof toDispose<T>>;
 
 /**
  * Make a value disposable by adding a Symbol.dispose method
@@ -32,6 +33,7 @@ export function toDispose<T extends object>(value: T, disposeFn: DisposeFn<T>) {
 }
 
 export type AsyncDispose<T> = (value: T) => PromiseLike<T>;
+export type AsyncDisposable<T extends object> = ReturnType<typeof toAsyncDispose<T>>;
 
 /**
  * Make a value async disposable by adding a Symbol.asyncDispose method
