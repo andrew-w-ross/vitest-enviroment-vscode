@@ -135,9 +135,10 @@ socket.on('message', (data: RawData) => {
 socket.send(encodeEnvelope(CONTROL_CHANNEL, { type: 'ready' }));
 ```
 
-#### 3. Vitest Worker (`src/vscode-worker.ts`)\n\nImplements the `VitestWorker` interface from `vitest/workers`:\n\n```typescript\nimport { parse, stringify } from 'flatted';\nimport { runBaseTests, type VitestWorker } from 'vitest/workers';\nimport { getTransport } from './worker-transport';\n\nconst worker: VitestWorker = {\n\tgetRpcOptions() {\n\t\tconst transport = getTransport();\n\t\treturn {\n\t\t\tpost: (data) => transport.post(data),\n\t\t\ton: (fn) => transport.subscribe(fn),\n\t\t\tserialize: stringify,\n\t\t\tdeserialize: parse,\n\t\t};\n\t},\n\trunTests: (state) => runBaseTests('run', state),\n\tcollectTests: (state) => runBaseTests('collect', state),\n};\n\nexport default worker;\n```
+#### 3. Vitest Worker (`src/vscode-worker.ts`)\n\nImplements the `VitestWorker` interface from `vitest/workers`:\n\n`typescript\nimport { parse, stringify } from 'flatted';\nimport { runBaseTests, type VitestWorker } from 'vitest/workers';\nimport { getTransport } from './worker-transport';\n\nconst worker: VitestWorker = {\n\tgetRpcOptions() {\n\t\tconst transport = getTransport();\n\t\treturn {\n\t\t\tpost: (data) => transport.post(data),\n\t\t\ton: (fn) => transport.subscribe(fn),\n\t\t\tserialize: stringify,\n\t\t\tdeserialize: parse,\n\t\t};\n\t},\n\trunTests: (state) => runBaseTests('run', state),\n\tcollectTests: (state) => runBaseTests('collect', state),\n};\n\nexport default worker;\n`
 
 #### 4. IPC Layer (`src/ipc.ts`)\n\nDefines message envelope structure for WebSocket communication:\n\n- Two channels: `CONTROL_CHANNEL` (for pool-worker commands) and `RPC_CHANNEL` (for Vitest RPC)\n- Message envelope: `{ channel: string, payload: unknown }`\n- Control messages: `ready`, `run`, `collect`, `shutdown`
+
 - Uses `flatted` for serialization to handle circular references
 
 ```typescript
@@ -308,6 +309,8 @@ Optional custom runner for VS Code-specific features:
     		if (frame) emit(JSON.parse(frame));
     	}
     }
+    ```
+
 ### Configuration Options
 
 Users configure the pool via Vite config:\n\n```typescript
@@ -344,7 +347,8 @@ export default defineConfig({
 \t\t},
 \t},
 });
-```
+
+````
 
 **Critical**: The `vscode` module must be externalized in Vite's config so it's loaded natively by VS Code's module system rather than transformed by Vite.
 
@@ -446,7 +450,7 @@ describe('Extension Commands', () => {
 		// Can test real behavior
 	});
 });
-```
+````
 
 ### Testing with Workspace
 
@@ -480,7 +484,7 @@ describe('Editor Integration', () => {
 
 ### Configuration
 
-```typescript
+````typescript
 ### Configuration
 
 ```typescript
@@ -499,7 +503,8 @@ export default defineConfig({
 \t\t},
 \t},
 });
-```
+````
+
 ```
 
 ## Dependencies
@@ -565,3 +570,4 @@ export default defineConfig({
 The key insight is **externalizing the `vscode` module** in Vite's config (`server.deps.external`), allowing VS Code's native module system to provide it at runtime. This eliminates the need for complex mocking or proxying.
 
 The implementation is simpler than initially designed - no custom runners, no process pools yet, just a straightforward pool that launches VS Code, connects via WebSocket, and runs tests with real API access.
+```

@@ -234,7 +234,8 @@ export default async function createVsCodePool(
 			}
 			connection.pending.clear();
 			connection.rpcSubscribers.clear();
-		}); ws.on('error', (error) => {
+		});
+		ws.on('error', (error) => {
 			logger.error('[vitest-vscode] Worker socket error', error);
 		});
 
@@ -274,7 +275,8 @@ export default async function createVsCodePool(
 		//Add to debug "--inspect-brk-extensions=9229"
 		launchArgs: [
 			'--disable-extensions',
-			'--log', 'off',
+			'--log',
+			'off',
 			'--logsPath',
 			// '--inspect-brk-extensions=9229',
 			path.resolve(workspaceRoot, '.vscode-test', 'logs'),

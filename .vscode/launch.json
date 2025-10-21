@@ -10,14 +10,9 @@
 			"name": "Run Integration Tests",
 			"autoAttachChildProcesses": true,
 			"cwd": "${workspaceFolder}/packages/dummy-extension",
-			"skipFiles": [
-				"<node_internals>/**",
-				"**/node_modules/**"
-			],
+			"skipFiles": ["<node_internals>/**", "**/node_modules/**"],
 			"program": "${workspaceRoot}/node_modules/vitest/vitest.mjs",
-			"args": [
-				"run"
-			],
+			"args": ["run"],
 			"smartStep": true,
 			"console": "integratedTerminal"
 		},
@@ -26,9 +21,7 @@
 			"type": "extensionHost",
 			"request": "launch",
 			"runtimeExecutable": "${execPath}",
-			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}/packages/dummy-extension"
-			]
+			"args": ["--extensionDevelopmentPath=${workspaceFolder}/packages/dummy-extension"]
 		},
 		{
 			"name": "Worker Debug",
@@ -40,9 +33,7 @@
 				"--extensionDevelopmentPath=${workspaceFolder}/packages/dummy-extension",
 				"--extensionTestsPath=${workspaceFolder}/packages/vitest-environment-vscode/dist/worker-entry"
 			],
-			"outFiles": [
-				"${workspaceFolder}/packages/vitest-environment-vscode/dist/**/*.js"
-			]
+			"outFiles": ["${workspaceFolder}/packages/vitest-environment-vscode/dist/**/*.js"]
 		},
 		{
 			"name": "Attach Worker",
@@ -52,9 +43,7 @@
 			"address": "localhost",
 			"localRoot": "${workspaceFolder}",
 			"remoteRoot": "${workspaceFolder}",
-			"outFiles": [
-				"${workspaceFolder}/packages/vitest-environment-vscode/dist/**/*.js"
-			],
+			"outFiles": ["${workspaceFolder}/packages/vitest-environment-vscode/dist/**/*.js"],
 			"skipFiles": [
 				"<node_internals>/**",
 				"**/node_modules/**",
@@ -73,10 +62,7 @@
 	"compounds": [
 		{
 			"name": "Integration + Attach",
-			"configurations": [
-				"Run Integration Tests",
-				"Attach Worker"
-			]
+			"configurations": ["Run Integration Tests", "Attach Worker"]
 		}
 	]
 }

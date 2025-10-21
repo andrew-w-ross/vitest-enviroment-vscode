@@ -5,8 +5,5 @@
 			"path": "./tsconfig.app.json"
 		}
 	],
-	"include": [
-		"tests",
-		"src/**/*.{test,spec}.ts"
-	]
+	"include": ["tests", "src/**/*.{test,spec}.ts"]
 }

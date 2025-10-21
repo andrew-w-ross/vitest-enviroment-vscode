@@ -1,6 +1,4 @@
 {
 	"extends": "@repo/typescript-configs/tsconfig.node.json",
-	"include": [
-		"*.ts"
-	]
+	"include": ["*.ts"]
 }

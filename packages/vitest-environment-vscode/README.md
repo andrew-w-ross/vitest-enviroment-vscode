@@ -21,11 +21,11 @@ By default, the pool produces minimal output. To see debug logs for troubleshoot
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  test: {
-    logLevel: 'debug', // Show detailed pool and worker logs
-    pool: import.meta.resolve('vitest-environment-vscode/pool'),
-    // ... other config
-  },
+	test: {
+		logLevel: 'debug', // Show detailed pool and worker logs
+		pool: import.meta.resolve('vitest-environment-vscode/pool'),
+		// ... other config
+	},
 });
 ```
 

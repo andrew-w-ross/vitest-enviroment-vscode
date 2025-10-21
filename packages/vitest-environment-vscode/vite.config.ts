@@ -22,8 +22,8 @@ export default defineConfig({
 		minify: false,
 		ssr: true,
 		rollupOptions: {
-			external: ["vscode"]
-		}
+			external: ['vscode'],
+		},
 	},
 	test: {
 		testTimeout: 1500,

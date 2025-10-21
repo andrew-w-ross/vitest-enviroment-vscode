@@ -3,25 +3,16 @@
 	"ui": "stream",
 	"tasks": {
 		"build": {
-			"dependsOn": [
-				"^build"
-			],
-			"outputs": [
-				"dist/**",
-				".vite/**"
-			]
+			"dependsOn": ["^build"],
+			"outputs": ["dist/**", ".vite/**"]
 		},
 		"build:watch": {
-			"dependsOn": [
-				"^build"
-			],
+			"dependsOn": ["^build"],
 			"cache": false,
 			"persistent": true
 		},
 		"typecheck": {
-			"dependsOn": [
-				"^build"
-			],
+			"dependsOn": ["^build"],
 			"outputs": []
 		},
 		"typecheck:watch": {
@@ -29,39 +20,26 @@
 			"persistent": true
 		},
 		"test": {
-			"dependsOn": [
-				"build"
-			],
+			"dependsOn": ["build"],
 			"outputs": []
 		},
 		"test:watch": {
-			"dependsOn": [
-				"build"
-			],
+			"dependsOn": ["build"],
 			"cache": false,
 			"persistent": true
 		},
 		"lint": {
-			"dependsOn": [
-				"^build"
-			],
+			"dependsOn": ["^build"],
 			"outputs": []
 		},
 		"lint:fix": {
-			"dependsOn": [
-				"^build"
-			],
+			"dependsOn": ["^build"],
 			"cache": false,
 			"outputs": []
 		},
 		"prerelease": {
-			"dependsOn": [
-				"^build",
-				"build"
-			],
-			"outputs": [
-				"dist/**"
-			]
+			"dependsOn": ["^build", "build"],
+			"outputs": ["dist/**"]
 		},
 		"dev": {
 			"cache": false,

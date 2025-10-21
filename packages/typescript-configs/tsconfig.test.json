@@ -3,9 +3,7 @@
 	"compilerOptions": {
 		"module": "esnext",
 		"moduleResolution": "bundler",
-		"types": [
-			"node"
-		],
+		"types": ["node"],
 		"rootDir": "${configDir}",
 		"outDir": "${configDir}/node_modules/.cache/tsbuild/dist-test",
 		"tsBuildInfoFile": "${configDir}/node_modules/.cache/tsbuild/tsconfig.test.tsbuildinfo"
