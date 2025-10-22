@@ -62,6 +62,7 @@
 4. Verify changes and ensure Mermaid diagrams render when modified.
 5. Confirm commands target the macOS `zsh` shell environment when needed.
 6. When working with packages, navigate to the specific package directory or use workspace commands.
+7. **Use Context7 for documentation:** When you need up-to-date library documentation or API references, use the Context7 MCP tools if available. These tools provide authoritative, current documentation for libraries and frameworks.
 
 ## Notes
 

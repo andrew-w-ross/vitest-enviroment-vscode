@@ -33,18 +33,14 @@
 			"type": "shell",
 			"command": "yarn typecheck",
 			"group": "build",
-			"problemMatcher": [
-				"$tsc"
-			]
+			"problemMatcher": ["$tsc"]
 		},
 		{
 			"label": "typecheck:watch",
 			"type": "shell",
 			"command": "yarn typecheck:watch",
 			"isBackground": true,
-			"problemMatcher": [
-				"$tsc-watch"
-			]
+			"problemMatcher": ["$tsc-watch"]
 		},
 		{
 			"label": "test",
@@ -68,17 +64,13 @@
 			"label": "lint",
 			"type": "shell",
 			"command": "yarn lint",
-			"problemMatcher": [
-				"$eslint-stylish"
-			]
+			"problemMatcher": ["$eslint-stylish"]
 		},
 		{
 			"label": "lint:fix",
 			"type": "shell",
 			"command": "yarn lint:fix",
-			"problemMatcher": [
-				"$eslint-stylish"
-			]
+			"problemMatcher": ["$eslint-stylish"]
 		}
 	]
 }

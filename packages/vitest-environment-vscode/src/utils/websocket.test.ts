@@ -9,7 +9,7 @@ const test = baseTest.extend<{
 	mswServer: ReturnType<typeof setupServer>;
 }>({
 	mswServer: [
-		async ({ }, use) => {
+		async ({}, use) => {
 			ws.link('ws://127.0.0.1:*');
 			const server = setupServer();
 			server.listen({ onUnhandledRequest: 'bypass' });
@@ -21,7 +21,6 @@ const test = baseTest.extend<{
 });
 
 describe('createWebSocketServer', () => {
-
 	test('should create a WebSocketServer with correct configuration', async () => {
 		const result = await createWebSocketServer();
 

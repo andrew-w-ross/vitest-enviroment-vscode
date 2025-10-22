@@ -1,4 +1,4 @@
-export type ErrorType = "server_initialization";
+export type ErrorType = 'server_initialization';
 
 export class EnviromentVscodeError extends Error {
 	type: ErrorType;
@@ -8,4 +8,3 @@ export class EnviromentVscodeError extends Error {
 		this.type = type;
 	}
 }
-

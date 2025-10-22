@@ -14,19 +14,21 @@ export async function createWebSocketServer() {
 	});
 
 	const address = wss.address();
-	if (!address || typeof address === "string") {
-		new EnviromentVscodeError("server_initialization");
+	if (!address || typeof address === 'string') {
+		new EnviromentVscodeError('server_initialization');
 	}
-	return toAsyncDispose({
-		wss
-	}, async ({ wss }) => {
-		await new Promise((resolve, reject) => {
-			wss.close((error) => {
-				if (error != null)
-					return reject(error);
+	return toAsyncDispose(
+		{
+			wss,
+		},
+		async ({ wss }) => {
+			await new Promise((resolve, reject) => {
+				wss.close((error) => {
+					if (error != null) return reject(error);
 
-				resolve(undefined)
-			})
-		})
-	})
+					resolve(undefined);
+				});
+			});
+		}
+	);
 }
