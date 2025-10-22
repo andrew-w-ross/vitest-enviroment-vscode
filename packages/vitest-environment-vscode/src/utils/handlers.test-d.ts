@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { describe, expectTypeOf, it } from 'vitest';
 import type { Fn } from '../types';
 import { handleOn, handleOnce } from './handlers';

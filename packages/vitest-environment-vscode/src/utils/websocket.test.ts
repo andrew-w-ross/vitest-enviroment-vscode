@@ -55,7 +55,7 @@ describe('createWebSocketServer', () => {
 		}
 
 		// After scope exit, server should be disposed
-		expect(serverInstance!.wss.address()).toBeNull();
+		expect(serverInstance.wss.address()).toBeNull();
 	});
 
 	test('should only close the server once even if disposed multiple times', async () => {
@@ -116,7 +116,7 @@ describe('createWebSocketServer', () => {
 			serverInstance = server;
 			expect(server.wss.address()).toBeTruthy();
 			throw new Error('Simulated error');
-		} catch (error) {
+		} catch (_error) {
 			// Expected error
 		}
 
@@ -281,7 +281,7 @@ describe('waitForWebSocketClient', () => {
 		}
 
 		// After scope exit, client should be disposed
-		expect(serverClientInstance!.ws.readyState).toBe(WebSocket.CLOSED);
+		expect(serverClientInstance.ws.readyState).toBe(WebSocket.CLOSED);
 	});
 
 	test('should handle already closed WebSocket on disposal', async () => {
@@ -339,7 +339,6 @@ describe('waitForWebSocketClient', () => {
 	test('should handle multiple sequential connections', async () => {
 		await using server = await createWebSocketServer();
 		const address = server.wss.address() as AddressInfo;
-
 
 		// First connection
 		const client1Promise = waitForWebSocketClient(server.wss);
@@ -405,7 +404,7 @@ describe('waitForWebSocketClient', () => {
 				}
 			});
 			throw new Error('Simulated error');
-		} catch (error) {
+		} catch (_error) {
 			// Expected error
 		}
 

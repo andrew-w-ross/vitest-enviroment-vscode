@@ -27,37 +27,37 @@ export type Once = {
  * Supports up to 4 overloads.
  */
 type OverloadedParameters<T> = T extends {
-	(...args: infer A1): any;
-	(...args: infer A2): any;
-	(...args: infer A3): any;
-	(...args: infer A4): any;
+	(...args: infer A1): unknown;
+	(...args: infer A2): unknown;
+	(...args: infer A3): unknown;
+	(...args: infer A4): unknown;
 }
 	? A1 | A2 | A3 | A4
 	: T extends {
-				(...args: infer A1): any;
-				(...args: infer A2): any;
-				(...args: infer A3): any;
+				(...args: infer A1): unknown;
+				(...args: infer A2): unknown;
+				(...args: infer A3): unknown;
 		  }
 		? A1 | A2 | A3
 		: T extends {
-					(...args: infer A1): any;
-					(...args: infer A2): any;
+					(...args: infer A1): unknown;
+					(...args: infer A2): unknown;
 			  }
 			? A1 | A2
-			: T extends (...args: infer A) => any
+			: T extends (...args: infer A) => unknown
 				? A
 				: never;
 
 /**
  * Extracts event names from overloaded parameter tuples.
  */
-type EventNames<T> = T extends [infer Event, any] ? Event : never;
+type EventNames<T> = T extends [infer Event, unknown] ? Event : never;
 
 /**
  * Extracts the handler function type for a specific event from overloaded parameters.
  */
 type HandlerForEvent<Overloads, Event> =
-	Extract<Overloads, [Event, any]> extends [Event, infer Handler] ? Handler : never;
+	Extract<Overloads, [Event, unknown]> extends [Event, infer Handler] ? Handler : never;
 
 /**
  * Extracts the return type for a specific event and handler combination.
