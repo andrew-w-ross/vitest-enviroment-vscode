@@ -1,4 +1,10 @@
+/** Function that performs cleanup for a disposable resource */
 export type DisposeFn<T> = (value: T) => unknown;
+
+/**
+ * Object with a Symbol.dispose method for automatic cleanup
+ * @see {@link toDispose}
+ */
 export type Disposable<T extends object> = ReturnType<typeof toDispose<T>>;
 
 /**
@@ -32,7 +38,13 @@ export function toDispose<T extends object>(value: T, disposeFn: DisposeFn<T>) {
 	});
 }
 
+/** Async function that performs cleanup for a disposable resource */
 export type AsyncDispose<T> = (value: T) => PromiseLike<unknown>;
+
+/**
+ * Object with a Symbol.asyncDispose method for automatic async cleanup
+ * @see {@link toAsyncDispose}
+ */
 export type AsyncDisposable<T extends object> = ReturnType<typeof toAsyncDispose<T>>;
 
 /**

@@ -1,4 +1,4 @@
-export type ErrorType = 'server_initialization';
+export type ErrorType = 'server_initialization' | 'client_connection';
 
 export class EnviromentVscodeError extends Error {
 	type: ErrorType;
