@@ -1,6 +1,7 @@
 import { WebSocketServer, type WebSocket } from 'ws';
 import { EnviromentVscodeError } from '../errors';
 import { toAsyncDispose } from './disposable';
+import { handleOnce } from './handlers';
 
 /**
  * Create a WebSocket server bound to localhost with automatic port allocation.
@@ -34,8 +35,20 @@ export async function createWebSocketServer() {
 		if (wss.address() != null) {
 			return resolve();
 		}
-		wss.once('listening', resolve);
-		wss.once('error', reject);
+
+		const stack = new DisposableStack();
+		stack.use(
+			handleOnce(wss, 'listening', () => {
+				stack.dispose();
+				resolve();
+			})
+		);
+		stack.use(
+			handleOnce(wss, 'error', (error: Error) => {
+				stack.dispose();
+				reject(error);
+			})
+		);
 	});
 
 	const address = wss.address();
@@ -86,28 +99,26 @@ export async function createWebSocketServer() {
  */
 export async function waitForWebSocketClient(wss: WebSocketServer) {
 	const ws = await new Promise<WebSocket>((resolve, reject) => {
-		const onConnection = (ws: WebSocket) => {
-			cleanup();
-			resolve(ws);
-		};
-		const onError = (error: Error) => {
-			cleanup();
-			reject(error);
-		};
-		const onClose = () => {
-			cleanup();
-			reject(new EnviromentVscodeError('client_connection'));
-		};
+		const stack = new DisposableStack();
 
-		const cleanup = () => {
-			wss.off('connection', onConnection);
-			wss.off('error', onError);
-			wss.off('close', onClose);
-		};
-
-		wss.once('connection', onConnection);
-		wss.once('error', onError);
-		wss.once('close', onClose);
+		stack.use(
+			handleOnce(wss, 'connection', (ws: WebSocket) => {
+				stack.dispose();
+				resolve(ws);
+			})
+		);
+		stack.use(
+			handleOnce(wss, 'error', (error: Error) => {
+				stack.dispose();
+				reject(error);
+			})
+		);
+		stack.use(
+			handleOnce(wss, 'close', () => {
+				stack.dispose();
+				reject(new EnviromentVscodeError('client_connection'));
+			})
+		);
 	});
 
 	return toAsyncDispose(
@@ -120,22 +131,21 @@ export async function waitForWebSocketClient(wss: WebSocketServer) {
 					return resolve();
 				}
 
-				const onClose = () => {
-					cleanup();
-					resolve();
-				};
-				const onError = (error: Error) => {
-					cleanup();
-					reject(error);
-				};
+				const stack = new DisposableStack();
 
-				const cleanup = () => {
-					ws.off('close', onClose);
-					ws.off('error', onError);
-				};
+				stack.use(
+					handleOnce(ws, 'close', () => {
+						stack.dispose();
+						resolve();
+					})
+				);
+				stack.use(
+					handleOnce(ws, 'error', (error: Error) => {
+						stack.dispose();
+						reject(error);
+					})
+				);
 
-				ws.once('close', onClose);
-				ws.once('error', onError);
 				ws.close();
 			});
 		}

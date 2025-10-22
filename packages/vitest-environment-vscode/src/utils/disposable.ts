@@ -1,3 +1,5 @@
+import 'core-js/proposals/explicit-resource-management';
+
 /** Function that performs cleanup for a disposable resource */
 export type DisposeFn<T> = (value: T) => unknown;
 
