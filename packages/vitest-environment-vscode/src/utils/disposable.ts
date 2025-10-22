@@ -32,7 +32,7 @@ export function toDispose<T extends object>(value: T, disposeFn: DisposeFn<T>) {
 	});
 }
 
-export type AsyncDispose<T> = (value: T) => PromiseLike<T>;
+export type AsyncDispose<T> = (value: T) => PromiseLike<unknown>;
 export type AsyncDisposable<T extends object> = ReturnType<typeof toAsyncDispose<T>>;
 
 /**
