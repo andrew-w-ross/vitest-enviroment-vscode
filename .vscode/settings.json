@@ -45,5 +45,6 @@
 		"git show": true,
 		"git diff": true,
 		"git grep": true
-	}
+	},
+	"typescript.tsdk": "node_modules/typescript/lib"
 }
