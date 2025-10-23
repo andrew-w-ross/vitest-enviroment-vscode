@@ -6,13 +6,6 @@
 		},
 		{
 			"path": "./tsconfig.node.json"
-		},
-		{
-			"path": "./tsconfig.test.json"
 		}
-	],
-	"compilerOptions": {
-		"composite": true,
-		"tsBuildInfoFile": "node_modules/.cache/tsbuildinfo/tsconfig.tsbuildinfo"
-	}
+	]
 }

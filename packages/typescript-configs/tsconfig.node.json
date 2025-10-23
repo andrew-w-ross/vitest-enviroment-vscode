@@ -3,12 +3,12 @@
 	"compilerOptions": {
 		"target": "es2020",
 		"module": "nodenext",
-		"lib": ["es2020"],
 		"moduleResolution": "nodenext",
-		"resolveJsonModule": true,
+		"lib": ["es2020"],
 		"composite": true,
 		"declaration": true,
 		"outDir": "${configDir}/node_modules/.cache/tsbuild/dist-node",
 		"tsBuildInfoFile": "${configDir}/node_modules/.cache/tsbuild/tsconfig.node.tsbuildinfo"
-	}
+	},
+	"include": ["${configDir}/*.ts"]
 }
