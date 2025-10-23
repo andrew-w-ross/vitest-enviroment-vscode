@@ -14,5 +14,9 @@
 		"tsBuildInfoFile": "${configDir}/node_modules/.cache/tsbuildinfo/tsconfig.app.tsbuildinfo"
 	},
 	"include": ["${configDir}/src/**/*.ts"],
-	"exclude": ["${configDir}/src/**/*.{test,spec,test-d}.ts"]
+	"exclude": [
+		"${configDir}/src/**/*.test.ts",
+		"${configDir}/src/**/*.spec.ts",
+		"${configDir}/src/**/*.test-d.ts"
+	]
 }

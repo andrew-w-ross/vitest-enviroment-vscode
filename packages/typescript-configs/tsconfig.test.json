@@ -8,6 +8,10 @@
 		"composite": false,
 		"rootDir": "${configDir}"
 	},
-	"include": ["${configDir}/src/**/*.{test,spec,test-d}.ts"],
+	"include": [
+		"${configDir}/src/**/*.test.ts",
+		"${configDir}/src/**/*.spec.ts",
+		"${configDir}/src/**/*.test-d.ts"
+	],
 	"references": [{ "path": "./tsconfig.app.json" }]
 }
