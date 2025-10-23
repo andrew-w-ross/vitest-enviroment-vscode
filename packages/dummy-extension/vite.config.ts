@@ -24,7 +24,7 @@ export default defineConfig({
 		testTimeout: 40000,
 		hookTimeout: 40000,
 		pool: import.meta.resolve('vitest-environment-vscode/pool'),
-		include: ['tests/**/*.{test,spec}.ts'],
+		include: ['src/**/*.{test,spec}.ts'],
 		globals: false,
 		silent: true,
 		server: {
