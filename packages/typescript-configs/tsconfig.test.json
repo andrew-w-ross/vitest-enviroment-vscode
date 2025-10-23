@@ -6,7 +6,8 @@
 		"types": ["node"],
 		"noEmit": true,
 		"composite": false,
-		"rootDir": "${configDir}"
+		"rootDir": "${configDir}",
+		"tsBuildInfoFile": "${configDir}/node_modules/.cache/tsbuildinfo/tsconfig.test.tsbuildinfo"
 	},
 	"include": [
 		"${configDir}/src/**/*.test.ts",
