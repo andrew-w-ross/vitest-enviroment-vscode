@@ -23,8 +23,14 @@ import {
 	type ControlRequest,
 	type ControlResponse,
 } from './ipc';
+import { toAsyncDispose, toDispose } from './utils/disposable';
+import { createWebSocketServer, waitForWebSocketClient } from './utils/websocket';
 
 const POOL_NAME = 'vscode';
+
+type MaybePromise<T> = T | PromiseLike<T>;
+type WebSocketServerHandle = Awaited<ReturnType<typeof createWebSocketServer>>;
+type WebSocketClientHandle = Awaited<ReturnType<typeof waitForWebSocketClient>>;
 
 type RunnerRpc = {
 	onCancel: (reason: CancelReason) => void;
@@ -53,10 +59,11 @@ export type ClientConnection = {
 	ws: WebSocket;
 	rpcSubscribers: Set<(payload: unknown) => void>;
 	pending: Map<string, PendingControl>;
+	dispose?: () => Promise<void>;
 };
 
 export type VsCodePoolOptions = {
-	makeServer?: () => WebSocketServer;
+	makeServer?: () => MaybePromise<WebSocketServer | WebSocketServerHandle>;
 	launchTests?: typeof launchVsCodeTests;
 	methodsFactory?: typeof createMethodsRPC;
 	birpcFactory?: typeof createBirpc;
@@ -69,6 +76,74 @@ export type VsCodePoolOptions = {
 	) => { dispose: () => void };
 	controlRequestTimeout?: number;
 };
+
+const isServerHandle = (value: unknown): value is WebSocketServerHandle => {
+	return (
+		typeof value === 'object' &&
+		value !== null &&
+		'wss' in (value as Record<string, unknown>) &&
+		Symbol.asyncDispose in (value as Record<PropertyKey, unknown>)
+	);
+};
+
+const wrapServerHandle = (wss: WebSocketServer): WebSocketServerHandle =>
+	toAsyncDispose({ wss }, async ({ wss }) => {
+		await new Promise<void>((resolve, reject) => {
+			wss.close((error) => {
+				if (error != null) return reject(error);
+				resolve();
+			});
+		});
+	});
+
+const ensureServerHandle = async (
+	makeServer: NonNullable<VsCodePoolOptions['makeServer']>
+): Promise<WebSocketServerHandle> => {
+	const server = await makeServer();
+	return isServerHandle(server) ? server : wrapServerHandle(server as WebSocketServer);
+};
+
+const waitForServerListening = async (wss: WebSocketServer) => {
+	if (wss.address() != null) return;
+
+	await new Promise<void>((resolve, reject) => {
+		const onListening = () => {
+			wss.off('error', onError);
+			resolve();
+		};
+
+		const onError = (error: Error) => {
+			wss.off('listening', onListening);
+			reject(error);
+		};
+
+		wss.once('listening', onListening);
+		wss.once('error', onError);
+	});
+};
+
+const wrapExistingSocket = (ws: WebSocket): WebSocketClientHandle =>
+	toAsyncDispose({ ws }, async ({ ws }) => {
+		await new Promise<void>((resolve, reject) => {
+			if (ws.readyState === WebSocket.CLOSED) {
+				return resolve();
+			}
+
+			const onClose = () => {
+				ws.off('error', onError);
+				resolve();
+			};
+
+			const onError = (error: Error) => {
+				ws.off('close', onClose);
+				reject(error);
+			};
+
+			ws.once('close', onClose);
+			ws.once('error', onError);
+			ws.close();
+		});
+	});
 
 const toError = (error: unknown): Error =>
 	error instanceof Error ? error : new Error(String(error));
@@ -140,7 +215,7 @@ export default async function createVsCodePool(
 	const defaultControlTimeout = Math.floor(testTimeout * 0.8);
 
 	const {
-		makeServer = () => new WebSocketServer({ host: '127.0.0.1', port: 0 }),
+		makeServer = () => createWebSocketServer(),
 		launchTests = launchVsCodeTests,
 		methodsFactory = createMethodsRPC,
 		birpcFactory = createBirpc,
@@ -150,21 +225,73 @@ export default async function createVsCodePool(
 		controlRequestTimeout = defaultControlTimeout,
 	} = options;
 
+	const serverHandle = await ensureServerHandle(makeServer);
+	const { wss } = serverHandle;
+	await waitForServerListening(wss);
+
 	const clients: ClientConnection[] = [];
 	const pendingConnections = new Map<WebSocket, ClientConnection>();
 	let nextRequestId = 0;
 	let nextWorkerId = 0;
+	let readyResolvers: Array<(client: ClientConnection) => void> = [];
 
-	const registerConnection = (ws: WebSocket): ClientConnection => {
-		if (clients.some((existing) => existing.ws === ws))
-			return clients.find((existing) => existing.ws === ws)!;
-		if (pendingConnections.has(ws)) return pendingConnections.get(ws)!;
+	const notifyClientReady = (client: ClientConnection) => {
+		const resolvers = readyResolvers;
+		readyResolvers = [];
+		for (const resolve of resolvers) {
+			resolve(client);
+		}
+	};
+
+	const waitForClient = async (timeout = 10_000): Promise<ClientConnection> => {
+		if (clients[0]) return clients[0];
+
+		return await new Promise<ClientConnection>((resolve, reject) => {
+			let settled = false;
+			let timer: ReturnType<typeof setTimeout>;
+
+			const resolver = (client: ClientConnection) => {
+				if (settled) return;
+				settled = true;
+				clearTimeout(timer);
+				const index = readyResolvers.indexOf(resolver);
+				if (index >= 0) readyResolvers.splice(index, 1);
+				resolve(client);
+			};
+
+			timer = setTimeout(() => {
+				if (settled) return;
+				settled = true;
+				const index = readyResolvers.indexOf(resolver);
+				if (index >= 0) readyResolvers.splice(index, 1);
+				reject(new Error('Timed out waiting for VS Code worker to connect'));
+			}, timeout);
+
+			readyResolvers.push(resolver);
+		});
+	};
+
+	const registerConnection = (handle: WebSocketClientHandle): ClientConnection => {
+		const { ws } = handle;
+
+		for (const existing of clients) {
+			if (existing.ws === ws) return existing;
+		}
+		const existingPending = pendingConnections.get(ws);
+		if (existingPending) return existingPending;
+
+		let isReady = false;
 
 		const connection: ClientConnection = {
 			ws,
 			rpcSubscribers: new Set(),
 			pending: new Map(),
+			dispose: async () => {
+				await handle[Symbol.asyncDispose]();
+			},
 		};
+
+		pendingConnections.set(ws, connection);
 
 		ws.on('message', (raw) => {
 			let envelope;
@@ -186,12 +313,14 @@ export default async function createVsCodePool(
 
 			const payload = envelope.payload;
 
-			// Handle ready request from worker
-			if (isControlRequest(payload as any)) {
+			if (!isReady && isControlRequest(payload as any)) {
 				const request = payload as ControlRequest;
 				if (request.action === 'ready') {
+					isReady = true;
 					pendingConnections.delete(ws);
-					clients.push(connection);
+					if (!clients.includes(connection)) {
+						clients.push(connection);
+					}
 					notifyClientReady(connection);
 					onClientConnected?.(connection);
 					const response: ControlResponse = {
@@ -220,7 +349,6 @@ export default async function createVsCodePool(
 		});
 
 		ws.on('close', (code, reason) => {
-			// Only log abnormal closures (1005 is normal, 1000 is normal too)
 			if (code !== 1000 && code !== 1005) {
 				logger.error(
 					`[vitest-vscode] Worker socket closed code=${code} reason=${reason.toString()}`
@@ -235,26 +363,36 @@ export default async function createVsCodePool(
 			connection.pending.clear();
 			connection.rpcSubscribers.clear();
 		});
+
 		ws.on('error', (error) => {
 			logger.error('[vitest-vscode] Worker socket error', error);
 		});
 
-		pendingConnections.set(ws, connection);
 		return connection;
 	};
 
-	const wss = makeServer();
-	wss.on('connection', registerConnection);
 	for (const existing of wss.clients) {
-		registerConnection(existing as WebSocket);
+		registerConnection(wrapExistingSocket(existing as WebSocket));
 	}
-	await new Promise<void>((resolve, reject) => {
-		if (wss.address() != null) {
-			return resolve();
+
+	let serverStopping = false;
+
+	const acceptConnections = (async () => {
+		while (!serverStopping) {
+			try {
+				const handle = await waitForWebSocketClient(wss);
+				registerConnection(handle);
+			} catch (error) {
+				if (serverStopping) {
+					break;
+				}
+				logger.error(
+					`[vitest-vscode] Failed to accept VS Code worker connection: ${toErrorMessage(error)}`
+				);
+			}
 		}
-		wss.once('listening', resolve);
-		wss.once('error', reject);
-	});
+	})();
+
 	const address = wss.address();
 	if (!address || typeof address === 'string')
 		throw new Error(`Couldn't determine the port for the WebSocketServer`);
@@ -272,7 +410,6 @@ export default async function createVsCodePool(
 		extensionTestsEnv: {
 			VITEST_VSCODE_PORT: port.toString(),
 		},
-		//Add to debug "--inspect-brk-extensions=9229"
 		launchArgs: [
 			'--disable-extensions',
 			'--log',
@@ -284,33 +421,6 @@ export default async function createVsCodePool(
 		logger.error('[vitest-vscode] VS Code Extension Host exited with an error', error);
 		throw error;
 	});
-
-	let readyResolvers: Array<(client: ClientConnection) => void> = [];
-
-	const notifyClientReady = (client: ClientConnection) => {
-		for (const resolve of readyResolvers) {
-			resolve(client);
-		}
-		readyResolvers = [];
-	};
-
-	const waitForClient = async (timeout = 10_000): Promise<ClientConnection> => {
-		if (clients[0]) return clients[0];
-		return await new Promise<ClientConnection>((resolve, reject) => {
-			const timer = setTimeout(() => {
-				const index = readyResolvers.indexOf(resolve);
-				if (index >= 0) readyResolvers.splice(index, 1);
-				reject(new Error('Timed out waiting for VS Code worker to connect'));
-			}, timeout);
-
-			const wrappedResolve = (client: ClientConnection) => {
-				clearTimeout(timer);
-				resolve(client);
-			};
-
-			readyResolvers.push(wrappedResolve);
-		});
-	};
 
 	const defaultBridgeFactory = (
 		project: TestProject,
@@ -409,6 +519,8 @@ export default async function createVsCodePool(
 		project.vitest.state.clearFiles(project, paths);
 
 		const { dispose } = buildBridge(project, client, method === 'collect');
+		using bridgeScope = toDispose({ dispose }, ({ dispose }) => dispose());
+
 		const workerId = ++nextWorkerId;
 		const request: ControlRequest = {
 			id: `${now()}-${++nextRequestId}`,
@@ -416,11 +528,7 @@ export default async function createVsCodePool(
 			ctx: createSerializableContext(project, specs, workerId, invalidates),
 		};
 
-		try {
-			await sendControlRequest(client, request);
-		} finally {
-			dispose();
-		}
+		await sendControlRequest(client, request);
 	};
 
 	const runForAllProjects = async (
@@ -448,28 +556,60 @@ export default async function createVsCodePool(
 		async close() {
 			const errors: Error[] = [];
 
-			for (const client of [...clients]) {
-				if (client.ws.readyState !== WebSocket.OPEN) continue;
-				const request: ControlRequest = {
-					id: `${now()}-${++nextRequestId}`,
-					action: 'shutdown',
-				};
+			const closeConnection = async (connection: ClientConnection, sendShutdown: boolean) => {
+				if (sendShutdown && connection.ws.readyState === WebSocket.OPEN) {
+					const request: ControlRequest = {
+						id: `${now()}-${++nextRequestId}`,
+						action: 'shutdown',
+					};
+					try {
+						await sendControlRequest(connection, request);
+					} catch (error) {
+						errors.push(toError(error));
+					}
+				}
+
 				try {
-					await sendControlRequest(client, request);
+					if (connection.dispose) {
+						await connection.dispose();
+					} else if (connection.ws.readyState === WebSocket.OPEN) {
+						connection.ws.close();
+					}
 				} catch (error) {
 					errors.push(toError(error));
 				}
-				client.ws.close();
+			};
+
+			for (const client of [...clients]) {
+				await closeConnection(client, true);
 			}
 
-			await new Promise<void>((resolve) => wss.close(() => resolve()));
+			for (const connection of pendingConnections.values()) {
+				await closeConnection(connection, false);
+			}
+			pendingConnections.clear();
+			clients.length = 0;
+			readyResolvers = [];
+
+			serverStopping = true;
+
+			try {
+				await serverHandle[Symbol.asyncDispose]();
+			} catch (error) {
+				errors.push(toError(error));
+			}
+
+			try {
+				await acceptConnections;
+			} catch (error) {
+				errors.push(toError(error));
+			}
 
 			try {
 				await testPromise;
 			} catch (error) {
 				errors.push(toError(error));
 			} finally {
-				// Restore stderr write
 				process.stderr.write = originalStderrWrite;
 			}
 
