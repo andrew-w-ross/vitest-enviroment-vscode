@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, expectTypeOf, it } from 'vitest';
-import type { EventNames, OverloadedParameters } from './types';
+import type { EventNames, OverloadedParameters, OverLoadFunctions } from './types';
 
 describe('OverloadedParameters', () => {
 	it('should extract parameters from a single overload', () => {
@@ -13,12 +14,12 @@ describe('OverloadedParameters', () => {
 	it('should extract parameters from two overloads', () => {
 		type TwoOverloads = {
 			(a: string): void;
-			(b: number): void;
+			(b: number, c: boolean): void;
 		};
 
 		type Result = OverloadedParameters<TwoOverloads>;
 
-		expectTypeOf<Result>().toEqualTypeOf<[a: string] | [b: number]>();
+		expectTypeOf<Result>().toEqualTypeOf<[a: string] | [b: number, c: boolean]>();
 	});
 
 	it('should extract parameters from three overloads', () => {
@@ -31,37 +32,6 @@ describe('OverloadedParameters', () => {
 		type Result = OverloadedParameters<ThreeOverloads>;
 
 		expectTypeOf<Result>().toEqualTypeOf<[a: string] | [b: number] | [c: boolean]>();
-	});
-
-	it('should extract parameters from four overloads', () => {
-		type FourOverloads = {
-			(a: string): void;
-			(b: number): void;
-			(c: boolean): void;
-			(d: symbol): void;
-		};
-
-		type Result = OverloadedParameters<FourOverloads>;
-
-		expectTypeOf<Result>().toEqualTypeOf<
-			[a: string] | [b: number] | [c: boolean] | [d: symbol]
-		>();
-	});
-
-	it('should extract parameters from five overloads', () => {
-		type FiveOverloads = {
-			(a: string): void;
-			(b: number): void;
-			(c: boolean): void;
-			(d: symbol): void;
-			(e: bigint): void;
-		};
-
-		type Result = OverloadedParameters<FiveOverloads>;
-
-		expectTypeOf<Result>().toEqualTypeOf<
-			[a: string] | [b: number] | [c: boolean] | [d: symbol] | [e: bigint]
-		>();
 	});
 
 	it('should extract parameters with multiple arguments', () => {

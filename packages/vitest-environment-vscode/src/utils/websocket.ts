@@ -151,3 +151,9 @@ export async function waitForWebSocketClient(wss: WebSocketServer) {
 		}
 	);
 }
+
+// export function messageStream(ws: WebSocket) {
+// 	const asyncDispose = new AsyncDisposableStack();
+
+// 	asyncDispose.use(handleOn(ws, 'message', valuev));
+// }
