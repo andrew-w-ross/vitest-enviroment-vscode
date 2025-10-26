@@ -6,23 +6,6 @@
  */
 export type Fn = (...args: any) => any;
 
-export type OverloadedParameters<FunctionType> = FunctionType extends {
-	(...args: infer A1): infer _R1;
-	(...args: infer A2): infer _R2;
-	(...args: infer A3): infer _R3;
-	(...args: infer A4): infer _R4;
-	(...args: infer A5): infer _R5;
-	(...args: infer A6): infer _R6;
-	(...args: infer A7): infer _R7;
-	(...args: infer A8): infer _R8;
-	(...args: infer A9): infer _R9;
-	(...args: infer A10): infer _R10;
-}
-	? A1 | A2 | A3 | A4 | A5 | A6 | A7 | A8 | A9 | A10
-	: FunctionType extends (...args: infer A) => unknown
-		? A
-		: never;
-
 export type OverLoadFunctions<FunctionType> = FunctionType extends {
 	(...args: infer A1): infer R1;
 	(...args: infer A2): infer R2;
@@ -48,7 +31,4 @@ export type OverLoadFunctions<FunctionType> = FunctionType extends {
 			| ((...p: A10) => R10)
 	: never;
 
-/**
- * Extracts event names from overloaded parameter tuples.
- */
-export type EventNames<T> = T extends [infer Event, ...unknown[]] ? Event : never;
+export type ExtractParams<T> = T extends (...args: infer P) => any ? P : never;

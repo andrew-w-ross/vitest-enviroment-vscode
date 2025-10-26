@@ -1,153 +1,331 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { describe, expect, it, vi } from 'vitest';
 import type { Fn } from '../types';
-import { handleOn, handleOnce } from './handlers';
+import { handleOn, handleOnce, type Off, type On, type Once } from './handlers';
 
 describe('handleOnce', () => {
-	type TestEmitter = {
-		once(event: 'testEvent', handler: (value: string) => void): void;
-		once(event: 'withReturn', handler: (value: number) => void): number;
-		off(event: string, handler: Fn): void;
+	type EventMap = {
+		stringEvent: (value: string) => void;
+		tupleEvent: (value: number, flag: boolean) => void;
+		voidEvent: () => void;
 	};
 
-	it('should call emitter.once with correct arguments', () => {
-		const mockOnce = vi.fn();
-		const mockOff = vi.fn();
-		const emitter: TestEmitter = {
-			once: mockOnce,
-			off: mockOff,
+	type TestEmitter = Off &
+		Once & {
+			once(event: 'stringEvent', handler: EventMap['stringEvent']): void;
+			once(event: 'tupleEvent', handler: EventMap['tupleEvent']): void;
+			once(event: 'voidEvent', handler: EventMap['voidEvent']): void;
 		};
 
-		const handler = (value: string) => {};
+	const createEmitter = () => {
+		const handlers = new Map<string, Fn>();
+		const off = vi.fn<(event: string, handler: Fn) => void>();
 
-		handleOnce(emitter, 'testEvent', handler);
-
-		expect(mockOnce).toHaveBeenCalledWith('testEvent', handler);
-	});
-
-	it('should call emitter.off on disposal', () => {
-		const mockOnce = vi.fn();
-		const mockOff = vi.fn();
 		const emitter: TestEmitter = {
-			once: mockOnce,
-			off: mockOff,
+			once(event: string, handler: Fn) {
+				handlers.set(event, handler);
+			},
+			off(event: string, handler: Fn) {
+				off(event, handler);
+				handlers.delete(event);
+			},
 		};
 
-		const handler = (value: string) => {};
+		return { emitter, handlers, off };
+	};
 
-		{
-			using disposable = handleOnce(emitter, 'testEvent', handler);
-		}
+	it('resolves with the single handler argument', async () => {
+		const { emitter, handlers, off } = createEmitter();
+		const disposable = handleOnce(emitter, 'stringEvent');
+		const handler = handlers.get('stringEvent') as (value: string) => void;
+		expect(handler).toBeTypeOf('function');
 
-		expect(mockOff).toHaveBeenCalledWith('testEvent', handler);
-	});
+		handler('test-value');
 
-	it('should return result from emitter.once', () => {
-		const mockOnce = vi.fn().mockReturnValue(42);
-		const mockOff = vi.fn();
-		const emitter: TestEmitter = {
-			once: mockOnce,
-			off: mockOff,
-		};
-
-		const handler = (value: number) => {};
-
-		const disposable = handleOnce(emitter, 'withReturn', handler);
-
-		expect(disposable.result).toBe(42);
-	});
-
-	it('should allow manual disposal', () => {
-		const mockOnce = vi.fn();
-		const mockOff = vi.fn();
-		const emitter: TestEmitter = {
-			once: mockOnce,
-			off: mockOff,
-		};
-
-		const handler = (value: string) => {};
-
-		const disposable = handleOnce(emitter, 'testEvent', handler);
-
-		expect(mockOff).not.toHaveBeenCalled();
+		await expect(disposable).resolves.toBe('test-value');
 
 		disposable[Symbol.dispose]();
+		expect(off).toHaveBeenCalledWith('stringEvent', handler);
+	});
 
-		expect(mockOff).toHaveBeenCalledWith('testEvent', handler);
+	it('resolves with a tuple when handler has multiple parameters', async () => {
+		const { emitter, handlers } = createEmitter();
+		const disposable = handleOnce(emitter, 'tupleEvent');
+		const handler = handlers.get('tupleEvent') as (value: number, flag: boolean) => void;
+		expect(handler).toBeTypeOf('function');
+
+		handler(42, true);
+
+		await expect(disposable).resolves.toEqual([42, true]);
+	});
+
+	it('resolves to undefined when handler receives no arguments', async () => {
+		const { emitter, handlers } = createEmitter();
+		const disposable = handleOnce(emitter, 'voidEvent');
+		const handler = handlers.get('voidEvent') as () => void;
+		expect(handler).toBeTypeOf('function');
+
+		handler();
+
+		await expect(disposable).resolves.toBeUndefined();
+	});
+
+	it('removes the listener when disposed before being resolved', () => {
+		const { emitter, handlers, off } = createEmitter();
+		const disposable = handleOnce(emitter, 'stringEvent');
+		const handler = handlers.get('stringEvent') as Fn;
+		expect(handler).toBeTypeOf('function');
+
+		disposable[Symbol.dispose]();
+		expect(off).toHaveBeenCalledWith('stringEvent', handler);
+	});
+
+	it('rejects with single argument when rejects flag is true', async () => {
+		const { emitter, handlers, off } = createEmitter();
+		const disposable = handleOnce(emitter, 'stringEvent', true);
+		const handler = handlers.get('stringEvent') as (value: string) => void;
+		expect(handler).toBeTypeOf('function');
+
+		handler('error-value');
+
+		await expect(disposable).rejects.toBe('error-value');
+
+		disposable[Symbol.dispose]();
+		expect(off).toHaveBeenCalledWith('stringEvent', handler);
+	});
+
+	it('rejects with tuple when rejects flag is true and multiple arguments', async () => {
+		const { emitter, handlers } = createEmitter();
+		const disposable = handleOnce(emitter, 'tupleEvent', true);
+		const handler = handlers.get('tupleEvent') as (value: number, flag: boolean) => void;
+		expect(handler).toBeTypeOf('function');
+
+		handler(99, false);
+
+		await expect(disposable).rejects.toEqual([99, false]);
+	});
+
+	it('can be used with using declaration for automatic disposal', async () => {
+		const { emitter, handlers, off } = createEmitter();
+		let handler: Fn;
+
+		{
+			using disposable = handleOnce(emitter, 'stringEvent');
+			handler = handlers.get('stringEvent') as (value: string) => void;
+
+			handler('auto-dispose');
+			await expect(disposable).resolves.toBe('auto-dispose');
+		}
+
+		// Should have been automatically disposed
+		expect(off).toHaveBeenCalledWith('stringEvent', handler);
 	});
 });
 
 describe('handleOn', () => {
-	type TestEmitter = {
-		on(event: 'testEvent', handler: (value: string) => void): void;
-		on(event: 'withReturn', handler: (value: number) => void): number;
-		off(event: string, handler: Fn): void;
+	type EventMap = {
+		stringEvent: (value: string) => void;
+		numberEvent: (value: number) => void;
+		tupleEvent: (x: number, y: number) => void;
 	};
 
-	it('should call emitter.on with correct arguments', () => {
-		const mockOn = vi.fn();
-		const mockOff = vi.fn();
-		const emitter: TestEmitter = {
-			on: mockOn,
-			off: mockOff,
+	type TestEmitter = Off &
+		On & {
+			on(event: 'stringEvent', handler: EventMap['stringEvent']): void;
+			on(event: 'numberEvent', handler: EventMap['numberEvent']): void;
+			on(event: 'tupleEvent', handler: EventMap['tupleEvent']): void;
 		};
 
-		const handler = (value: string) => {};
+	const createEmitter = () => {
+		const handlers = new Map<string, Fn[]>();
+		const off = vi.fn<(event: string, handler: Fn) => void>();
 
-		handleOn(emitter, 'testEvent', handler);
+		const emitter: TestEmitter = {
+			on(event: string, handler: Fn) {
+				if (!handlers.has(event)) {
+					handlers.set(event, []);
+				}
+				handlers.get(event)!.push(handler);
+			},
+			off(event: string, handler: Fn) {
+				off(event, handler);
+				const eventHandlers = handlers.get(event);
+				if (eventHandlers) {
+					const index = eventHandlers.indexOf(handler);
+					if (index !== -1) {
+						eventHandlers.splice(index, 1);
+					}
+				}
+			},
+		};
 
-		expect(mockOn).toHaveBeenCalledWith('testEvent', handler);
+		const emit = (event: string, ...args: unknown[]) => {
+			const eventHandlers = handlers.get(event);
+			if (eventHandlers) {
+				for (const handler of eventHandlers) {
+					handler(...args);
+				}
+			}
+		};
+
+		return { emitter, emit, off };
+	};
+
+	it('yields events as they are emitted', async () => {
+		const { emitter, emit } = createEmitter();
+		const iterator = handleOn(emitter, 'stringEvent');
+
+		emit('stringEvent', 'first');
+		emit('stringEvent', 'second');
+
+		const result1 = await iterator.next();
+		expect(result1).toEqual({ value: 'first', done: false });
+
+		const result2 = await iterator.next();
+		expect(result2).toEqual({ value: 'second', done: false });
+
+		iterator[Symbol.dispose]();
 	});
 
-	it('should call emitter.off on disposal', () => {
-		const mockOn = vi.fn();
-		const mockOff = vi.fn();
-		const emitter: TestEmitter = {
-			on: mockOn,
-			off: mockOff,
-		};
+	it('buffers events when no consumer is waiting', async () => {
+		const { emitter, emit } = createEmitter();
+		const iterator = handleOn(emitter, 'numberEvent');
 
-		const handler = (value: string) => {};
+		// Emit multiple events before consuming
+		emit('numberEvent', 1);
+		emit('numberEvent', 2);
+		emit('numberEvent', 3);
 
-		{
-			using disposable = handleOn(emitter, 'testEvent', handler);
+		// Should get all buffered events in order
+		expect(await iterator.next()).toEqual({ value: 1, done: false });
+		expect(await iterator.next()).toEqual({ value: 2, done: false });
+		expect(await iterator.next()).toEqual({ value: 3, done: false });
+
+		iterator[Symbol.dispose]();
+	});
+
+	it('drops oldest events when buffer exceeds maxBuffer', async () => {
+		const { emitter, emit } = createEmitter();
+		const iterator = handleOn(emitter, 'numberEvent', 3);
+
+		// Emit more events than buffer size
+		emit('numberEvent', 1);
+		emit('numberEvent', 2);
+		emit('numberEvent', 3);
+		emit('numberEvent', 4); // This should drop 1
+
+		// Should only get the last 3 events
+		expect(await iterator.next()).toEqual({ value: 2, done: false });
+		expect(await iterator.next()).toEqual({ value: 3, done: false });
+		expect(await iterator.next()).toEqual({ value: 4, done: false });
+
+		iterator[Symbol.dispose]();
+	});
+
+	it('yields tuples for handlers with multiple parameters', async () => {
+		const { emitter, emit } = createEmitter();
+		const iterator = handleOn(emitter, 'tupleEvent');
+
+		emit('tupleEvent', 10, 20);
+
+		const result = await iterator.next();
+		expect(result).toEqual({ value: [10, 20], done: false });
+
+		iterator[Symbol.dispose]();
+	});
+
+	it('removes listener when disposed', () => {
+		const { emitter, off } = createEmitter();
+		const iterator = handleOn(emitter, 'stringEvent');
+
+		iterator[Symbol.dispose]();
+
+		// Should have called off with the handler
+		expect(off).toHaveBeenCalledTimes(1);
+		expect(off).toHaveBeenCalledWith('stringEvent', expect.any(Function));
+	});
+
+	it('returns done after disposal', async () => {
+		const { emitter, emit } = createEmitter();
+		const iterator = handleOn(emitter, 'stringEvent');
+
+		emit('stringEvent', 'before-dispose');
+		iterator[Symbol.dispose]();
+
+		// Next call should return done
+		const result = await iterator.next();
+		expect(result.done).toBe(true);
+	});
+
+	it('resolves pending consumers with done on disposal', async () => {
+		const { emitter } = createEmitter();
+		const iterator = handleOn(emitter, 'stringEvent');
+
+		// Start waiting for an event
+		const nextPromise = iterator.next();
+
+		// Dispose before emitting
+		iterator[Symbol.dispose]();
+
+		// Should resolve with done
+		const result = await nextPromise;
+		expect(result.done).toBe(true);
+	});
+
+	it('can be used with for await...of loop', async () => {
+		const { emitter, emit } = createEmitter();
+		const iterator = handleOn(emitter, 'numberEvent');
+
+		// Emit some events
+		emit('numberEvent', 1);
+		emit('numberEvent', 2);
+		emit('numberEvent', 3);
+
+		const results: number[] = [];
+		let count = 0;
+
+		for await (const value of iterator) {
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+			results.push(value);
+			count++;
+			if (count === 3) {
+				break; // Exit the loop
+			}
 		}
 
-		expect(mockOff).toHaveBeenCalledWith('testEvent', handler);
+		expect(results).toEqual([1, 2, 3]);
 	});
 
-	it('should return result from emitter.on', () => {
-		const mockOn = vi.fn().mockReturnValue(42);
-		const mockOff = vi.fn();
-		const emitter: TestEmitter = {
-			on: mockOn,
-			off: mockOff,
-		};
+	it('can be used with using declaration for automatic disposal', async () => {
+		const { emitter, emit, off } = createEmitter();
 
-		const handler = (value: number) => {};
+		{
+			using iterator = handleOn(emitter, 'stringEvent');
+			emit('stringEvent', 'test' as never);
 
-		const disposable = handleOn(emitter, 'withReturn', handler);
+			const result = await iterator.next();
+			expect(result.value).toBe('test');
+		}
 
-		expect(disposable.result).toBe(42);
+		// Should have been automatically disposed
+		expect(off).toHaveBeenCalledTimes(1);
 	});
 
-	it('should allow manual disposal', () => {
-		const mockOn = vi.fn();
-		const mockOff = vi.fn();
-		const emitter: TestEmitter = {
-			on: mockOn,
-			off: mockOff,
-		};
+	it('handles rapid emission and consumption', async () => {
+		const { emitter, emit } = createEmitter();
+		const iterator = handleOn(emitter, 'numberEvent');
 
-		const handler = (value: string) => {};
+		// Interleave emissions and consumptions
+		emit('numberEvent', 1);
+		const r1 = await iterator.next();
+		expect(r1.value).toBe(1);
 
-		const disposable = handleOn(emitter, 'testEvent', handler);
+		emit('numberEvent', 2);
+		emit('numberEvent', 3);
+		const r2 = await iterator.next();
+		const r3 = await iterator.next();
+		expect(r2.value).toBe(2);
+		expect(r3.value).toBe(3);
 
-		expect(mockOff).not.toHaveBeenCalled();
-
-		disposable[Symbol.dispose]();
-
-		expect(mockOff).toHaveBeenCalledWith('testEvent', handler);
+		iterator[Symbol.dispose]();
 	});
 });

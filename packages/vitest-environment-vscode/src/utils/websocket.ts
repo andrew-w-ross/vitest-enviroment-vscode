@@ -30,26 +30,11 @@ import { handleOnce } from './handlers';
  */
 export async function createWebSocketServer() {
 	const wss = new WebSocketServer({ host: '127.0.0.1', port: 0 });
-	await new Promise<void>((resolve, reject) => {
-		//If it has an address it's already ready
-		if (wss.address() != null) {
-			return resolve();
-		}
 
-		const stack = new DisposableStack();
-		stack.use(
-			handleOnce(wss, 'listening', () => {
-				stack.dispose();
-				resolve();
-			})
-		);
-		stack.use(
-			handleOnce(wss, 'error', (error: Error) => {
-				stack.dispose();
-				reject(error);
-			})
-		);
-	});
+	using listening = handleOnce(wss, 'listening');
+	using error = handleOnce(wss, 'error', true);
+
+	await Promise.race([listening, error]);
 
 	const address = wss.address();
 	if (!address || typeof address === 'string') {
@@ -98,62 +83,54 @@ export async function createWebSocketServer() {
  * ```
  */
 export async function waitForWebSocketClient(wss: WebSocketServer) {
-	const ws = await new Promise<WebSocket>((resolve, reject) => {
-		const stack = new DisposableStack();
+	const stack = new DisposableStack();
 
-		stack.use(
-			handleOnce(wss, 'connection', (ws: WebSocket) => {
-				stack.dispose();
-				resolve(ws);
-			})
+	const connection = stack.use(handleOnce(wss, 'connection'));
+	const serverError = stack.use(handleOnce(wss, 'error', true));
+	const serverClose = stack.use(handleOnce(wss, 'close'));
+
+	try {
+		const [ws] = (await Promise.race([
+			connection,
+			serverError,
+			serverClose.then(() => {
+				throw new EnviromentVscodeError('client_connection');
+			}),
+		])) as [WebSocket, unknown];
+
+		return toAsyncDispose(
+			{
+				ws,
+			},
+			async ({ ws }) => {
+				await new Promise<void>((resolve, reject) => {
+					if (ws.readyState === ws.CLOSED) {
+						return resolve();
+					}
+
+					const disposeStack = new DisposableStack();
+
+					const closeListener = disposeStack.use(handleOnce(ws, 'close'));
+					const errorListener = disposeStack.use(handleOnce(ws, 'error', true));
+
+					void closeListener
+						.then(() => {
+							disposeStack.dispose();
+							resolve();
+						})
+						.catch(reject);
+
+					void errorListener.catch((error) => {
+						disposeStack.dispose();
+						const cause = error instanceof Error ? error : new Error(String(error));
+						reject(cause);
+					});
+
+					ws.close();
+				});
+			}
 		);
-		stack.use(
-			handleOnce(wss, 'error', (error: Error) => {
-				stack.dispose();
-				reject(error);
-			})
-		);
-		stack.use(
-			handleOnce(wss, 'close', () => {
-				stack.dispose();
-				reject(new EnviromentVscodeError('client_connection'));
-			})
-		);
-	});
-
-	return toAsyncDispose(
-		{
-			ws,
-		},
-		async ({ ws }) => {
-			await new Promise<void>((resolve, reject) => {
-				if (ws.readyState === ws.CLOSED) {
-					return resolve();
-				}
-
-				const stack = new DisposableStack();
-
-				stack.use(
-					handleOnce(ws, 'close', () => {
-						stack.dispose();
-						resolve();
-					})
-				);
-				stack.use(
-					handleOnce(ws, 'error', (error: Error) => {
-						stack.dispose();
-						reject(error);
-					})
-				);
-
-				ws.close();
-			});
-		}
-	);
+	} finally {
+		stack.dispose();
+	}
 }
-
-// export function messageStream(ws: WebSocket) {
-// 	const asyncDispose = new AsyncDisposableStack();
-
-// 	asyncDispose.use(handleOn(ws, 'message', valuev));
-// }

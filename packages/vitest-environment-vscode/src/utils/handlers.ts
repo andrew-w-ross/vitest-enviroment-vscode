@@ -1,50 +1,82 @@
-import type { EventNames, Fn, OverloadedParameters } from '../types';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import type { IsLiteral } from 'type-fest';
+import type { ExtractParams, Fn, OverLoadFunctions } from '../types';
 import { toDispose } from './disposable';
+
+type Subscription = (event: any, handler: Fn) => any;
 
 /**
  * Represents an event emitter with an `off` method for removing listeners.
  */
 export type Off = {
-	off(event: string, handler: Fn): void;
+	off: Subscription;
 };
 
 /**
  * Represents an event emitter with an `on` method for registering listeners.
  */
 export type On = {
-	on(event: string, handler: Fn): void;
-};
+	on: Subscription;
+} & Off;
 
 /**
  * Represents an event emitter with a `once` method for one-time listeners.
  */
 export type Once = {
-	once(event: string, handler: Fn): void;
-};
+	once: Subscription;
+} & Off;
 
-/**
- * Extracts the handler function type for a specific event from overloaded parameters.
- */
-type HandlerForEvent<Overloads, Event> =
-	Extract<Overloads, [Event, unknown]> extends [Event, infer Handler] ? Handler : never;
-
-/**
- * Extracts the return type for a specific event and handler combination.
- */
-type ReturnTypeForEvent<Method, Event, Handler> = Method extends (
-	event: Event,
-	handler: Handler
-) => infer R
-	? R
+type NakedEventNames<Parameters> = Parameters extends [infer E, ...unknown[]]
+	? IsLiteral<E> extends true
+		? E
+		: never
 	: never;
+
+export type EventNames<Functions> = NakedEventNames<Parameters<OverLoadFunctions<Functions>>>;
+
+//Leave this type as
+type DistributeParams<Parameters, Event> = Parameters extends unknown
+	? Parameters extends [Event, infer Handler]
+		? ExtractParams<Handler> extends infer P
+			? P extends any[]
+				? any[] extends P
+					? never
+					: P
+				: never
+			: never
+		: never
+	: never;
+
+export type EventHandlerParams<Functions, Event> = DistributeParams<
+	Parameters<OverLoadFunctions<Functions>>,
+	Event
+>;
+
+type UnpackArray<T extends unknown[]> = T['length'] extends 0
+	? undefined
+	: T['length'] extends 1
+		? T[0]
+		: T;
+
+function unpackArray<T extends unknown[]>(values: T) {
+	return (
+		values.length === 0 ? undefined : values.length === 1 ? values[0] : values
+	) as UnpackArray<T>;
+}
+
+export type OnceResult<
+	EventEmitter extends Once,
+	Event extends EventNames<EventEmitter['once']>,
+	Rejects extends boolean,
+> = Rejects extends true ? never : UnpackArray<EventHandlerParams<EventEmitter['once'], Event>>;
 
 /**
  * Type-safe wrapper for event emitter's `once` method that preserves overload signatures.
  *
  * @param emitter - Event emitter with `once` and `off` methods
  * @param event - Event name (must match one of the emitter's overloads)
- * @param handler - Event handler function (type is inferred from the event name)
- * @returns Disposable object with the result and automatic cleanup via `off` on disposal
+ * @param rejects - When true, the promise rejects with the handler arguments instead of resolving
+ * @returns Disposable promise with the handler arguments and automatic cleanup via `off`
  *
  * @example
  * ```ts
@@ -57,71 +89,134 @@ type ReturnTypeForEvent<Method, Event, Handler> = Method extends (
  * declare const emitter: MyEmitter;
  *
  * // Type-safe: 'value' is inferred as string
- * using listener = handleOnce(emitter, 'data', (value) => {
- *   console.log(value.toUpperCase());
- * });
+ * using result = handleOnce(emitter, 'data');
+ * console.log((await result).toUpperCase());
  *
  * // Return type is inferred as number
- * const { result } = handleOnce(emitter, 'error', (error) => {
- *   console.error(error.message);
- * });
+ * const value = await handleOnce(emitter, 'error');
+ * console.error(value.message);
  * ```
  */
 export function handleOnce<
-	E extends Off & Once,
-	Overloads extends OverloadedParameters<E['once']>,
-	Event extends EventNames<Overloads>,
-	Handler extends HandlerForEvent<Overloads, Event>,
->(emitter: E, event: Event, handler: Handler) {
-	const result = emitter.once(event, handler as unknown as Fn) as ReturnTypeForEvent<
-		E['once'],
-		Event,
-		Handler
-	>;
+	EventEmitter extends Once,
+	const Event extends EventNames<EventEmitter['once']>,
+	const Rejects extends boolean = false,
+>(emitter: EventEmitter, event: Event, rejects?: Rejects) {
+	const { promise, resolve, reject } =
+		Promise.withResolvers<OnceResult<EventEmitter, Event, Rejects>>();
 
-	return toDispose({ result }, () => emitter.off(event, handler as unknown as Fn));
+	const handler: Fn = (...args: unknown[]) => {
+		if (rejects) {
+			reject(args.length === 1 ? args[0] : args);
+			return;
+		}
+		resolve(unpackArray(args) as OnceResult<EventEmitter, Event, Rejects>);
+	};
+	emitter.once(event, handler);
+	return toDispose(promise, () => emitter.off(event, handler));
 }
 
+export type OnResult<
+	EventEmitter extends On,
+	Event extends EventNames<EventEmitter['on']>,
+> = UnpackArray<EventHandlerParams<EventEmitter['on'], Event>>;
+
 /**
- * Type-safe wrapper for event emitter's `on` method that preserves overload signatures.
+ * Type-safe wrapper for event emitter's `on` method that returns an async iterator.
  *
  * @param emitter - Event emitter with `on` and `off` methods
  * @param event - Event name (must match one of the emitter's overloads)
- * @param handler - Event handler function (type is inferred from the event name)
- * @returns Disposable object with the result and automatic cleanup via `off` on disposal
+ * @param maxBuffer - Maximum number of events to buffer (default: 100)
+ * @returns Disposable async iterator that yields handler arguments
  *
  * @example
  * ```ts
  * type MyEmitter = {
  *   on(event: 'data', handler: (value: string) => void): void;
- *   on(event: 'error', handler: (error: Error) => void): number;
+ *   on(event: 'error', handler: (error: Error) => void): void;
  *   off(event: string, handler: Fn): void;
  * };
  *
  * declare const emitter: MyEmitter;
  *
  * // Type-safe: 'value' is inferred as string
- * using listener = handleOn(emitter, 'data', (value) => {
+ * using iterator = handleOn(emitter, 'data');
+ * for await (const value of iterator) {
  *   console.log(value.toUpperCase());
- * });
- *
- * // Return type is inferred as number
- * const { result } = handleOn(emitter, 'error', (error) => {
- *   console.error(error.message);
- * });
+ * }
  * ```
  */
 export function handleOn<
-	E extends Off & On,
-	Overloads extends OverloadedParameters<E['on']>,
-	Event extends EventNames<Overloads>,
-	Handler extends HandlerForEvent<Overloads, Event>,
->(emitter: E, event: Event, handler: Handler) {
-	const result = emitter.on(event, handler as unknown as Fn) as ReturnTypeForEvent<
-		E['on'],
-		Event,
-		Handler
-	>;
+	EventEmitter extends On,
+	const Event extends EventNames<EventEmitter['on']>,
+>(emitter: EventEmitter, event: Event, maxBuffer = 100) {
+	const buffer: OnResult<EventEmitter, Event>[] = [];
+	const pending: ((value: IteratorResult<OnResult<EventEmitter, Event>>) => void)[] = [];
+	let done = false;
 
-	return toDispose({ result }, () => emitter.off(event, handler as unknown as Fn));
+	const handler: Fn = (...args: unknown[]) => {
+		const value = unpackArray(args) as OnResult<EventEmitter, Event>;
+
+		// If there's a pending consumer, resolve immediately
+		const resolve = pending.shift();
+		if (resolve) {
+			resolve({ value, done: false });
+			return;
+		}
+
+		// Otherwise buffer the event (drop oldest if at capacity)
+		if (buffer.length >= maxBuffer) {
+			buffer.shift();
+		}
+		buffer.push(value);
+	};
+
+	emitter.on(event, handler);
+
+	const dispose = () => {
+		if (done) return;
+		done = true;
+		emitter.off(event, handler);
+
+		// Resolve all pending consumers with done
+		while (pending.length > 0) {
+			const resolve = pending.shift();
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+			resolve?.({ value: undefined as any, done: true });
+		}
+	};
+
+	return toDispose(
+		{
+			async next() {
+				// If already disposed, return done
+				if (done) {
+					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+					return { value: undefined as any, done: true };
+				}
+
+				// If buffer has events, return the oldest one
+				if (buffer.length > 0) {
+					const value = buffer.shift()!;
+					return { value, done: false };
+				}
+
+				// Wait for the next event
+				return new Promise<IteratorResult<OnResult<EventEmitter, Event>>>((resolve) => {
+					pending.push(resolve);
+				});
+			},
+
+			return() {
+				dispose();
+				// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+				return Promise.resolve({ value: undefined as any, done: true });
+			},
+
+			[Symbol.asyncIterator]() {
+				return this;
+			},
+		} satisfies AsyncIterableIterator<OnResult<EventEmitter, Event>>,
+		dispose
+	);
 }
