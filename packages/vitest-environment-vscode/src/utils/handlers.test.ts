@@ -284,7 +284,6 @@ describe('handleOn', () => {
 		let count = 0;
 
 		for await (const value of iterator) {
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 			results.push(value);
 			count++;
 			if (count === 3) {

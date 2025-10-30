@@ -13,6 +13,10 @@
 		"esModuleInterop": true,
 		"allowSyntheticDefaultImports": true,
 		"noUncheckedSideEffectImports": true,
-		"resolveJsonModule": true
+		"resolveJsonModule": true,
+		"baseUrl": ".",
+		"paths": {
+			"~/*": ["${configDir}/src/*"]
+		}
 	}
 }

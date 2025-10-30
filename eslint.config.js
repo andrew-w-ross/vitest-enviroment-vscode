@@ -19,6 +19,7 @@ export default defineConfig(
 	...turboConfig,
 	{
 		rules: {
+			'@typescript-eslint/no-unsafe-return': 'off',
 			'@typescript-eslint/consistent-type-definitions': ['error', 'type'],
 			'@typescript-eslint/no-unused-vars': [
 				'error',

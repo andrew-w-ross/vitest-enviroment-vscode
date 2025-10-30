@@ -3,17 +3,17 @@
 	"ui": "stream",
 	"tasks": {
 		"build": {
-			"dependsOn": ["^build"],
+			"dependsOn": ["^build", "^typecheck"],
 			"outputs": ["dist/**", ".vite/**"]
 		},
 		"build:watch": {
-			"dependsOn": ["^build"],
+			"dependsOn": ["^build", "^typecheck"],
 			"cache": false,
 			"persistent": true
 		},
 		"typecheck": {
-			"dependsOn": ["^build"],
-			"outputs": []
+			"dependsOn": ["^typecheck"],
+			"outputs": ["dist/**/*.d.ts", "dist/**/*.d.ts.map"]
 		},
 		"typecheck:watch": {
 			"cache": false,

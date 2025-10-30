@@ -3,20 +3,12 @@
 	"version": "0.1.0",
 	"type": "module",
 	"description": "A Vitest environment for VS Code",
-	"main": "./dist/pool",
-	"types": "./dist/pool.d.ts",
+	"main": "./dist/index",
+	"types": "./dist/index.d.ts",
 	"exports": {
 		".": {
-			"types": "./dist/pool.d.ts",
-			"import": "./dist/pool"
-		},
-		"./pool": {
-			"types": "./dist/pool.d.ts",
-			"import": "./dist/pool"
-		},
-		"./worker-entry": {
-			"types": "./dist/worker-entry.d.ts",
-			"import": "./dist/worker-entry"
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index"
 		},
 		"./vscode-worker": {
 			"types": "./dist/vscode-worker.d.ts",
@@ -46,10 +38,11 @@
 		"@repo/typescript-configs": "workspace:*",
 		"@types/node": "^24.8.1",
 		"@types/vscode": "^1.105.0",
-		"@types/ws": "^8",
+		"@types/ws": "^8.18.1",
 		"typescript": "^5.9.3",
-		"vite": "^7.1.10",
-		"vitest": "^3.2.4"
+		"vite": "^7.1.12",
+		"vite-tsconfig-paths": "^5.1.4",
+		"vitest": "^4.0.5"
 	},
 	"peerDependencies": {
 		"vitest": ">=3.2.4"
@@ -59,6 +52,7 @@
 		"birpc": "^2.6.1",
 		"core-js": "^3.46.0",
 		"type-fest": "^5.1.0",
-		"ws": "^8.18.3"
+		"ws": "^8.18.3",
+		"zod": "^4.1.12"
 	}
 }

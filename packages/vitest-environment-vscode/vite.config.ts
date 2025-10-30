@@ -1,28 +1,43 @@
 import { defineConfig } from 'vitest/config';
+import tsconfigPaths from 'vite-tsconfig-paths';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import pkg from './package.json' with { type: 'json' };
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const poolSrc = resolve(__dirname, 'src/pool.ts');
+
+// Generate entry points from package.json exports
+const entry = Object.entries(pkg.exports as Record<string, { import: string }>).reduce(
+	(acc, [key, value]) => {
+		// Extract the name from the export path (e.g., "./pool" -> "pool", "." -> "pool")
+		const name = key === '.' ? 'index' : key.replace('./', '');
+		// Convert dist path to src path (e.g., "./dist/pool" -> "src/pool.ts")
+		const srcPath = value.import.replace('./dist/', 'src/').replace(/\.d\.ts$/, '') + '.ts';
+		acc[name] = resolve(__dirname, srcPath);
+		return acc;
+	},
+	{} as Record<string, string>
+);
 
 export default defineConfig({
+	plugins: [
+		tsconfigPaths({
+			configNames: ['tsconfig.app.json'],
+		}),
+	],
 	build: {
 		target: 'node22',
 		lib: {
-			entry: {
-				pool: poolSrc,
-				'worker-entry': resolve(__dirname, 'src/worker-entry.ts'),
-				'vscode-worker': resolve(__dirname, 'src/vscode-worker.ts'),
-			},
+			entry,
 			formats: ['es'],
 		},
 		outDir: 'dist',
 		sourcemap: true,
 		minify: false,
-		ssr: true,
+		emptyOutDir: false,
 		rollupOptions: {
-			external: ['vscode'],
+			external: [...Object.keys(pkg.dependencies), /^node:/],
 		},
 	},
 	test: {

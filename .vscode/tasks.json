@@ -12,6 +12,16 @@
 			"problemMatcher": []
 		},
 		{
+			"label": "build:vitest-environment-vscode",
+			"type": "shell",
+			"command": "yarn build --filter=vitest-environment-vscode",
+			"options": {
+				"cwd": "${workspaceFolder}/packages/vitest-environment-vscode"
+			},
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
 			"label": "build:watch vitest-enviroment-vscode",
 			"type": "shell",
 			"command": "yarn turbo run build:watch --filter=vitest-environment-vscode",
@@ -29,11 +39,34 @@
 			}
 		},
 		{
+			"label": "build:dummy-extension",
+			"type": "shell",
+			"command": "yarn build --filter=dummy-extension",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": []
+		},
+		{
 			"label": "typecheck",
 			"type": "shell",
 			"command": "yarn typecheck",
 			"group": "build",
 			"problemMatcher": ["$tsc"]
+		},
+		{
+			"label": "typecheck:vitest-environment-vscode",
+			"type": "shell",
+			"command": "yarn typecheck --filter=vitest-environment-vscode --log-prefix=none",
+			"group": "build",
+			"problemMatcher": {
+				"base": "$tsc",
+				"fileLocation": [
+					"relative",
+					"${workspaceFolder}/packages/vitest-environment-vscode"
+				]
+			}
 		},
 		{
 			"label": "typecheck:watch",
@@ -71,6 +104,11 @@
 			"type": "shell",
 			"command": "yarn lint:fix",
 			"problemMatcher": ["$eslint-stylish"]
+		},
+		{
+			"label": "build:debug-pool",
+			"dependsOn": ["build:dummy-extension", "typecheck:vitest-environment-vscode"],
+			"problemMatcher": []
 		}
 	]
 }

@@ -32,3 +32,5 @@ export type OverLoadFunctions<FunctionType> = FunctionType extends {
 	: never;
 
 export type ExtractParams<T> = T extends (...args: infer P) => any ? P : never;
+
+export type Maybe<T> = T | null | undefined;
