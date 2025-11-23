@@ -1,5 +1,3 @@
-import type { Fn } from '~/types';
-
-export function invoke<TFn extends Fn>(fn: TFn) {
-	return fn() as ReturnType<TFn>;
+export function wait(ms = 100) {
+	return new Promise<void>((resolve) => setTimeout(resolve, ms));
 }

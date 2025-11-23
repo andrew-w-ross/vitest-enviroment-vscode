@@ -16,6 +16,7 @@
 		"typecheck:watch": "turbo run typecheck:watch",
 		"test": "turbo run test",
 		"test:watch": "turbo run test:watch",
+		"clean": "rm -rf .turbo && find . -path '*/node_modules/.cache/tsbuildinfo/*.tsbuildinfo' -delete",
 		"lint": "eslint .",
 		"lint:fix": "eslint . --fix",
 		"format": "prettier --write .",
@@ -36,15 +37,15 @@
 		"arrowParens": "always"
 	},
 	"devDependencies": {
-		"@eslint/compat": "^1.4.1",
-		"@eslint/js": "^9.38.0",
-		"eslint": "^9.38.0",
+		"@eslint/compat": "^2.0.0",
+		"@eslint/js": "^9.39.1",
+		"eslint": "^9.39.1",
 		"eslint-config-prettier": "^10.1.8",
-		"eslint-config-turbo": "^2.5.8",
-		"globals": "^16.4.0",
+		"eslint-config-turbo": "^2.6.1",
+		"globals": "^16.5.0",
 		"prettier": "^3.6.2",
-		"turbo": "^2.5.8",
+		"turbo": "^2.6.1",
 		"typescript": "^5.9.3",
-		"typescript-eslint": "^8.46.2"
+		"typescript-eslint": "^8.47.0"
 	}
 }

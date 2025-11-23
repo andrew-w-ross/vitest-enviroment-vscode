@@ -13,10 +13,14 @@
 		"./vscode-worker": {
 			"types": "./dist/vscode-worker.d.ts",
 			"import": "./dist/vscode-worker"
+		},
+		"./vscode-worker.cjs": {
+			"require": "./vscode-worker.cjs"
 		}
 	},
 	"files": [
-		"dist"
+		"dist",
+		"vscode-worker.cjs"
 	],
 	"scripts": {
 		"build": "vite build --mode development",
@@ -37,21 +41,22 @@
 	"devDependencies": {
 		"@repo/typescript-configs": "workspace:*",
 		"@types/node": "^24.8.1",
-		"@types/vscode": "^1.105.0",
+		"@types/vscode": "^1.106.1",
 		"@types/ws": "^8.18.1",
 		"typescript": "^5.9.3",
-		"vite": "^7.1.12",
+		"vite": "^7.2.4",
 		"vite-tsconfig-paths": "^5.1.4",
-		"vitest": "^4.0.5"
+		"vitest": "^4.0.13"
 	},
 	"peerDependencies": {
 		"vitest": ">=3.2.4"
 	},
 	"dependencies": {
 		"@vscode/test-electron": "^2.5.2",
-		"birpc": "^2.6.1",
-		"core-js": "^3.46.0",
-		"type-fest": "^5.1.0",
+		"core-js": "^3.47.0",
+		"devalue": "^5.5.0",
+		"indisposed": "^0.0.7",
+		"type-fest": "^5.2.0",
 		"ws": "^8.18.3",
 		"zod": "^4.1.12"
 	}

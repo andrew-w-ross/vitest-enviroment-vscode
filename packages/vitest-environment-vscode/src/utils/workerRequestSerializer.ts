@@ -1,12 +1,23 @@
+import { parse, stringify } from 'devalue';
 import type { WorkerRequest } from 'vitest/node';
 
-export function serialize(request: WorkerRequest): Buffer {
-	const json = JSON.stringify(request);
+export type ControlRequest =
+	| {
+			type: 'ready';
+	  }
+	| {
+			type: 'ready_ack';
+	  };
+
+export type Request = WorkerRequest | ControlRequest;
+
+export function serialize(request: Request): Buffer {
+	const json = stringify(request);
 	return Buffer.from(json, 'utf-8');
 }
 
 //TODO: Fix this mess
-export function deserialize(value: unknown): WorkerRequest {
+export function deserialize(value: unknown): Request {
 	let json: string;
 
 	if (typeof value === 'string') {
@@ -17,5 +28,5 @@ export function deserialize(value: unknown): WorkerRequest {
 		throw new TypeError('Expected string or Buffer for deserialization');
 	}
 
-	return JSON.parse(json) as WorkerRequest;
+	return parse(json) as Request;
 }

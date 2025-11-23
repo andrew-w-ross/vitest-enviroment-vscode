@@ -8,9 +8,9 @@ describe('createWebSocketServer', () => {
 	test('should create a WebSocketServer with correct configuration', async () => {
 		await using server = await createWebSocketServer();
 
-		expect(server.wss).toBeInstanceOf(WebSocketServer);
+		expect(server).toBeInstanceOf(WebSocketServer);
 		// Verify it's configured for localhost
-		const address = server.wss.address() as AddressInfo;
+		const address = server.address() as AddressInfo;
 		expect(address.address).toBe('127.0.0.1');
 		expect(address.port).toBeGreaterThan(0);
 	});
@@ -19,16 +19,15 @@ describe('createWebSocketServer', () => {
 		await using server = await createWebSocketServer();
 
 		// Server should be listening and have a valid address
-		const address = server.wss.address();
+		const address = server.address();
 		expect(address).toBeTruthy();
 		expect(typeof address).not.toBe('string');
 	});
 
-	test('should return a disposable object with wss property', async () => {
+	test('should return an async disposable WebSocketServer', async () => {
 		await using server = await createWebSocketServer();
 
-		expect(server).toHaveProperty('wss');
-		expect(server.wss).toBeInstanceOf(WebSocketServer);
+		expect(server).toBeInstanceOf(WebSocketServer);
 		expect(typeof server[Symbol.asyncDispose]).toBe('function');
 	});
 
@@ -36,12 +35,12 @@ describe('createWebSocketServer', () => {
 		const server = await createWebSocketServer();
 
 		// Server should be listening
-		expect(server.wss.address()).toBeTruthy();
+		expect(server.address()).toBeTruthy();
 
 		await server[Symbol.asyncDispose]();
 
 		// After disposal, address should be null
-		expect(server.wss.address()).toBeNull();
+		expect(server.address()).toBeNull();
 	});
 
 	test('should automatically dispose when using await using syntax', async () => {
@@ -49,18 +48,23 @@ describe('createWebSocketServer', () => {
 
 		{
 			await using server = await createWebSocketServer();
+			expect(server).toBeInstanceOf(WebSocketServer);
 			serverInstance = server;
 			// Server should be listening within scope
-			expect(server.wss.address()).toBeTruthy();
+			expect(server.address()).toBeTruthy();
 		}
 
+		expect(serverInstance).toBeDefined();
+		if (serverInstance == null) {
+			throw new Error('serverInstance should be defined after using scope');
+		}
 		// After scope exit, server should be disposed
-		expect(serverInstance.wss.address()).toBeNull();
+		expect(serverInstance.address()).toBeNull();
 	});
 
 	test('should only close the server once even if disposed multiple times', async () => {
 		const server = await createWebSocketServer();
-		const closeSpy = vi.spyOn(server.wss, 'close');
+		const closeSpy = vi.spyOn(server, 'close');
 
 		await server[Symbol.asyncDispose]();
 		await server[Symbol.asyncDispose]();
@@ -71,7 +75,7 @@ describe('createWebSocketServer', () => {
 
 	test('should handle concurrent disposal calls', async () => {
 		const server = await createWebSocketServer();
-		const closeSpy = vi.spyOn(server.wss, 'close');
+		const closeSpy = vi.spyOn(server, 'close');
 
 		const promises = [
 			server[Symbol.asyncDispose](),
@@ -93,7 +97,7 @@ describe('createWebSocketServer', () => {
 
 	test('should accept WebSocket connections', async () => {
 		await using server = await createWebSocketServer();
-		const address = server.wss.address() as AddressInfo;
+		const address = server.address() as AddressInfo;
 
 		// Create a client connection
 		const client = new WebSocket(`ws://127.0.0.1:${address.port}`);
@@ -114,82 +118,30 @@ describe('createWebSocketServer', () => {
 		try {
 			await using server = await createWebSocketServer();
 			serverInstance = server;
-			expect(server.wss.address()).toBeTruthy();
+			expect(server.address()).toBeTruthy();
 			throw new Error('Simulated error');
 		} catch (_error) {
 			// Expected error
 		}
 
 		// Server should still be disposed despite the error
-		expect(serverInstance!.wss.address()).toBeNull();
-	});
-
-	test('should throw error when server address is null', async () => {
-		const addressSpy = vi.spyOn(WebSocketServer.prototype, 'address');
-
-		addressSpy.mockImplementationOnce(function (this: WebSocketServer) {
-			// First call: check if ready - return null to wait for listening event
-			return null;
-		});
-
-		addressSpy.mockImplementationOnce(function (this: WebSocketServer) {
-			// Second call: after listening event - return null to trigger error
-			return null;
-		});
-
-		try {
-			const server = await createWebSocketServer();
-			// Clean up if somehow it succeeded
-			await server[Symbol.asyncDispose]();
-			expect.fail('Should have thrown an error');
-		} catch (error) {
-			expect(error).toBeInstanceOf(EnviromentVscodeError);
-			expect((error as EnviromentVscodeError).type).toBe('server_initialization');
-		} finally {
-			vi.restoreAllMocks();
-		}
-	});
-
-	test('should throw error when server address is a string (Unix socket)', async () => {
-		const addressSpy = vi.spyOn(WebSocketServer.prototype, 'address');
-
-		addressSpy.mockImplementationOnce(function (this: WebSocketServer) {
-			// First call: check if ready - return null to wait for listening event
-			return null;
-		});
-
-		addressSpy.mockImplementationOnce(function (this: WebSocketServer) {
-			// Second call: after listening event - return string to trigger error
-			return '/tmp/socket.sock';
-		});
-
-		try {
-			const server = await createWebSocketServer();
-			// Clean up if somehow it succeeded
-			await server[Symbol.asyncDispose]();
-			expect.fail('Should have thrown an error');
-		} catch (error) {
-			expect(error).toBeInstanceOf(EnviromentVscodeError);
-			expect((error as EnviromentVscodeError).type).toBe('server_initialization');
-		} finally {
-			vi.restoreAllMocks();
-		}
+		expect(serverInstance!.address()).toBeNull();
 	});
 });
 
 describe('waitForWebSocketClient', () => {
 	test('should wait for and return a WebSocket client connection', async () => {
 		await using server = await createWebSocketServer();
-		const address = server.wss.address() as AddressInfo;
+		const address = server.address() as AddressInfo;
 
 		// Create a client connection
-		const clientPromise = waitForWebSocketClient(server.wss);
+		const clientPromise = waitForWebSocketClient(server);
 		const client = new WebSocket(`ws://127.0.0.1:${address.port}`);
 
 		await using serverClient = await clientPromise;
 
-		expect(serverClient.ws).toBeDefined();
-		expect(serverClient.ws.readyState).toBe(WebSocket.OPEN);
+		expect(serverClient).toBeDefined();
+		expect(serverClient.readyState).toBe(WebSocket.OPEN);
 
 		await new Promise<void>((resolve) => {
 			if (client.readyState === WebSocket.OPEN) {
@@ -204,16 +156,16 @@ describe('waitForWebSocketClient', () => {
 		});
 	});
 
-	test('should return a disposable object with ws property', async () => {
+	test('should return an async disposable WebSocket client', async () => {
 		await using server = await createWebSocketServer();
-		const address = server.wss.address() as AddressInfo;
+		const address = server.address() as AddressInfo;
 
-		const clientPromise = waitForWebSocketClient(server.wss);
+		const clientPromise = waitForWebSocketClient(server);
 		const client = new WebSocket(`ws://127.0.0.1:${address.port}`);
 
 		await using serverClient = await clientPromise;
 
-		expect(serverClient).toHaveProperty('ws');
+		expect(serverClient).toBeInstanceOf(WebSocket);
 		expect(typeof serverClient[Symbol.asyncDispose]).toBe('function');
 
 		await new Promise<void>((resolve) => {
@@ -231,18 +183,18 @@ describe('waitForWebSocketClient', () => {
 
 	test('should close the WebSocket client when disposed', async () => {
 		await using server = await createWebSocketServer();
-		const address = server.wss.address() as AddressInfo;
+		const address = server.address() as AddressInfo;
 
-		const clientPromise = waitForWebSocketClient(server.wss);
+		const clientPromise = waitForWebSocketClient(server);
 		const client = new WebSocket(`ws://127.0.0.1:${address.port}`);
 
 		const serverClient = await clientPromise;
-
-		expect(serverClient.ws.readyState).toBe(WebSocket.OPEN);
+		expect(serverClient).toBeInstanceOf(WebSocket);
+		expect(serverClient.readyState).toBe(WebSocket.OPEN);
 
 		await serverClient[Symbol.asyncDispose]();
 
-		expect(serverClient.ws.readyState).toBe(WebSocket.CLOSED);
+		expect(serverClient.readyState).toBe(WebSocket.CLOSED);
 
 		await new Promise<void>((resolve) => {
 			if (client.readyState === WebSocket.CLOSED) {
@@ -255,17 +207,17 @@ describe('waitForWebSocketClient', () => {
 
 	test('should automatically dispose when using await using syntax', async () => {
 		await using server = await createWebSocketServer();
-		const address = server.wss.address() as AddressInfo;
+		const address = server.address() as AddressInfo;
 
 		let serverClientInstance: Awaited<ReturnType<typeof waitForWebSocketClient>> | undefined;
 
 		{
-			const clientPromise = waitForWebSocketClient(server.wss);
+			const clientPromise = waitForWebSocketClient(server);
 			const client = new WebSocket(`ws://127.0.0.1:${address.port}`);
 
 			await using serverClient = await clientPromise;
 			serverClientInstance = serverClient;
-			expect(serverClient.ws.readyState).toBe(WebSocket.OPEN);
+			expect(serverClient.readyState).toBe(WebSocket.OPEN);
 
 			await new Promise<void>((resolve) => {
 				if (client.readyState === WebSocket.OPEN) {
@@ -281,21 +233,24 @@ describe('waitForWebSocketClient', () => {
 		}
 
 		// After scope exit, client should be disposed
-		expect(serverClientInstance.ws.readyState).toBe(WebSocket.CLOSED);
+		if (serverClientInstance == null) {
+			throw new Error('serverClientInstance should be defined after using scope');
+		}
+		expect(serverClientInstance.readyState).toBe(WebSocket.CLOSED);
 	});
 
 	test('should handle already closed WebSocket on disposal', async () => {
 		await using server = await createWebSocketServer();
-		const address = server.wss.address() as AddressInfo;
+		const address = server.address() as AddressInfo;
 
-		const clientPromise = waitForWebSocketClient(server.wss);
+		const clientPromise = waitForWebSocketClient(server);
 		const client = new WebSocket(`ws://127.0.0.1:${address.port}`);
 
 		const serverClient = await clientPromise;
 
 		// Close the WebSocket before disposal
-		serverClient.ws.close();
-		await new Promise((resolve) => serverClient.ws.once('close', resolve));
+		serverClient.close();
+		await new Promise((resolve) => serverClient.once('close', resolve));
 
 		// Disposal should complete without errors
 		await expect(serverClient[Symbol.asyncDispose]()).resolves.toBeUndefined();
@@ -312,7 +267,7 @@ describe('waitForWebSocketClient', () => {
 	test('should reject with client_connection error when server closes before connection', async () => {
 		await using server = await createWebSocketServer();
 
-		const clientPromise = waitForWebSocketClient(server.wss);
+		const clientPromise = waitForWebSocketClient(server);
 
 		// Wait a bit to ensure listeners are attached, then close the server
 		await new Promise((resolve) => setTimeout(resolve, 10));
@@ -327,30 +282,30 @@ describe('waitForWebSocketClient', () => {
 	test('should reject with error when server has error before connection', async () => {
 		await using server = await createWebSocketServer();
 
-		const clientPromise = waitForWebSocketClient(server.wss);
+		const clientPromise = waitForWebSocketClient(server);
 
 		// Trigger an error on the server
 		const error = new Error('Server error');
-		server.wss.emit('error', error);
+		server.emit('error', error);
 
 		await expect(clientPromise).rejects.toThrow(error);
 	});
 
 	test('should handle multiple sequential connections', async () => {
 		await using server = await createWebSocketServer();
-		const address = server.wss.address() as AddressInfo;
+		const address = server.address() as AddressInfo;
 
 		// First connection
-		const client1Promise = waitForWebSocketClient(server.wss);
+		const client1Promise = waitForWebSocketClient(server);
 		const client1 = new WebSocket(`ws://127.0.0.1:${address.port}`);
 		await using serverClient1 = await client1Promise;
-		expect(serverClient1.ws.readyState).toBe(WebSocket.OPEN);
+		expect(serverClient1.readyState).toBe(WebSocket.OPEN);
 
 		// Second connection
-		const client2Promise = waitForWebSocketClient(server.wss);
+		const client2Promise = waitForWebSocketClient(server);
 		const client2 = new WebSocket(`ws://127.0.0.1:${address.port}`);
 		await using serverClient2 = await client2Promise;
-		expect(serverClient2.ws.readyState).toBe(WebSocket.OPEN);
+		expect(serverClient2.readyState).toBe(WebSocket.OPEN);
 
 		await Promise.all([
 			new Promise<void>((resolve) => {
@@ -380,17 +335,17 @@ describe('waitForWebSocketClient', () => {
 
 	test('should handle disposal in error scenarios', async () => {
 		await using server = await createWebSocketServer();
-		const address = server.wss.address() as AddressInfo;
+		const address = server.address() as AddressInfo;
 
 		let serverClientInstance: Awaited<ReturnType<typeof waitForWebSocketClient>> | undefined;
 
 		try {
-			const clientPromise = waitForWebSocketClient(server.wss);
+			const clientPromise = waitForWebSocketClient(server);
 			const client = new WebSocket(`ws://127.0.0.1:${address.port}`);
 
 			await using serverClient = await clientPromise;
 			serverClientInstance = serverClient;
-			expect(serverClient.ws.readyState).toBe(WebSocket.OPEN);
+			expect(serverClient.readyState).toBe(WebSocket.OPEN);
 
 			await new Promise<void>((resolve) => {
 				if (client.readyState === WebSocket.OPEN) {
@@ -409,6 +364,6 @@ describe('waitForWebSocketClient', () => {
 		}
 
 		// Client should still be disposed despite the error
-		expect(serverClientInstance!.ws.readyState).toBe(WebSocket.CLOSED);
+		expect(serverClientInstance!.readyState).toBe(WebSocket.CLOSED);
 	});
 });

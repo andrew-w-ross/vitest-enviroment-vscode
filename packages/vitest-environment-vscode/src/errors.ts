@@ -1,4 +1,9 @@
-export type ErrorType = 'server_initialization' | 'client_connection' | 'client_env';
+export type ErrorType =
+	| 'server_initialization'
+	| 'server_started_before_ready'
+	| 'client_connection'
+	| 'client_env'
+	| 'client_ack_timeout';
 
 export class EnviromentVscodeError extends Error {
 	type: ErrorType;

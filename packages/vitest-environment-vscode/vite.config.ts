@@ -8,8 +8,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Generate entry points from package.json exports
-const entry = Object.entries(pkg.exports as Record<string, { import: string }>).reduce(
+const entry = Object.entries(pkg.exports as Record<string, { import?: string }>).reduce(
 	(acc, [key, value]) => {
+		if (value.import == null) return acc;
 		// Extract the name from the export path (e.g., "./pool" -> "pool", "." -> "pool")
 		const name = key === '.' ? 'index' : key.replace('./', '');
 		// Convert dist path to src path (e.g., "./dist/pool" -> "src/pool.ts")
@@ -22,6 +23,7 @@ const entry = Object.entries(pkg.exports as Record<string, { import: string }>).
 
 export default defineConfig({
 	plugins: [
+		//@ts-expect-error Plugins broken for now
 		tsconfigPaths({
 			configNames: ['tsconfig.app.json'],
 		}),
@@ -35,10 +37,11 @@ export default defineConfig({
 		outDir: 'dist',
 		sourcemap: true,
 		minify: false,
-		emptyOutDir: false,
+		emptyOutDir: true,
 		rollupOptions: {
 			external: [...Object.keys(pkg.dependencies), /^node:/],
 		},
+		ssr: true,
 	},
 	test: {
 		testTimeout: 1500,

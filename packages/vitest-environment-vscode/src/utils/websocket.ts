@@ -1,8 +1,6 @@
 import { WebSocket, WebSocketServer } from 'ws';
 import { EnviromentVscodeError } from '../errors';
-import { toAsyncDispose } from './disposable';
-import { handleOnce } from './handlers';
-import { invoke } from './fn';
+import { invoke, once, toAsyncDisposable } from 'indisposed';
 
 /**
  * Create a WebSocket server bound to localhost with automatic port allocation.
@@ -13,15 +11,15 @@ import { invoke } from './fn';
  * ```ts
  * // Automatic cleanup with await using
  * await using server = await createWebSocketServer();
- * const address = server.wss.address();
+ * const address = server.address();
  * console.log(`Server listening on port ${address.port}`);
  * // Server automatically closes when scope exits
  *
  * // Manual cleanup when needed
  * const server = await createWebSocketServer();
  * try {
- *   // Use server.wss for WebSocket operations
- *   server.wss.on('connection', (ws) => {
+ *   // Use the server for WebSocket operations
+ *   server.on('connection', (ws) => {
  *     ws.send('Hello!');
  *   });
  * } finally {
@@ -33,26 +31,21 @@ export async function createWebSocketServer() {
 	const wss = new WebSocketServer({ host: '127.0.0.1', port: 0 });
 
 	await invoke(async () => {
-		using listening = handleOnce(wss, 'listening');
-		using error = handleOnce(wss, 'error', true);
+		using listening = once(wss, 'listening');
+		using error = once(wss, 'error', true);
 
 		await Promise.race([listening, error]);
 	});
 
-	return toAsyncDispose(
-		{
-			wss,
-		},
-		async ({ wss }) => {
-			await new Promise((resolve, reject) => {
-				wss.close((error) => {
-					if (error != null) return reject(error);
+	return toAsyncDisposable(wss, async (server) => {
+		await new Promise((resolve, reject) => {
+			server.close((error) => {
+				if (error != null) return reject(error);
 
-					resolve(undefined);
-				});
+				resolve(undefined);
 			});
-		}
-	);
+		});
+	});
 }
 
 /**
@@ -65,15 +58,15 @@ export async function createWebSocketServer() {
  * ```ts
  * // Automatic cleanup with await using
  * await using server = await createWebSocketServer();
- * await using client = await waitForWebSocketClient(server.wss);
- * client.ws.send('Hello from server!');
+ * await using client = await waitForWebSocketClient(server);
+ * client.send('Hello from server!');
  * // Client automatically closes when scope exits
  *
  * // Manual cleanup when needed
  * const server = await createWebSocketServer();
- * const client = await waitForWebSocketClient(server.wss);
+ * const client = await waitForWebSocketClient(server);
  * try {
- *   client.ws.on('message', (data) => {
+ *   client.on('message', (data) => {
  *     console.log('Received:', data.toString());
  *   });
  * } finally {
@@ -83,9 +76,9 @@ export async function createWebSocketServer() {
  */
 export async function waitForWebSocketClient(wss: WebSocketServer) {
 	const ws = await invoke(async () => {
-		using connection = handleOnce(wss, 'connection');
-		using serverError = handleOnce(wss, 'error', true);
-		using serverClose = handleOnce(wss, 'close');
+		using connection = once(wss, 'connection');
+		using serverError = once(wss, 'error', true);
+		using serverClose = once(wss, 'close');
 
 		const [ws] = await Promise.race([
 			connection,
@@ -98,28 +91,40 @@ export async function waitForWebSocketClient(wss: WebSocketServer) {
 		return ws;
 	});
 
-	return toAsyncDispose(
-		{
-			ws,
-		},
-		async ({ ws }) => {
-			if (ws.readyState === ws.CLOSED) return;
-			using closeListener = handleOnce(ws, 'close');
-			using errorListener = handleOnce(ws, 'error', true);
+	return toAsyncDisposable(ws, async (client) => {
+		if (client.readyState === client.CLOSED) return;
+		using closeListener = once(client, 'close');
+		using errorListener = once(client, 'error', true);
 
-			ws.close();
-			await Promise.race([closeListener, errorListener]);
-		}
-	);
+		client.close();
+		await Promise.race([closeListener, errorListener]);
+	});
 }
 
+/**
+ * Connect to a remote WebSocket endpoint and wait for the handshake to finish.
+ * Unlike {@link waitForWebSocketClient}, this operates from the client side and
+ * returns the raw `WebSocket` instance so callers can manage its lifecycle.
+ * @param address - Full WebSocket address, e.g. `ws://127.0.0.1:12345`
+ * @returns The connected WebSocket instance
+ * @throws {EnviromentVscodeError} When the remote server closes before opening
+ * @example
+ * ```ts
+ * import type { AddressInfo } from 'net';
+ *
+ * await using server = await createWebSocketServer();
+ * const { port } = server.address() as AddressInfo;
+ * const ws = await waitForConnection(`ws://127.0.0.1:${port}`);
+ * ws.send('ping');
+ * ```
+ */
 export async function waitForConnection(address: string) {
 	const ws = new WebSocket(address);
 
 	await invoke(async () => {
-		using connection = handleOnce(ws, 'open');
-		using serverError = handleOnce(ws, 'error', true);
-		using serverClose = handleOnce(ws, 'close');
+		using connection = once(ws, 'open');
+		using serverError = once(ws, 'error', true);
+		using serverClose = once(ws, 'close');
 
 		await Promise.race([
 			connection,
