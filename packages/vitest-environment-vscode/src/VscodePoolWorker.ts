@@ -86,6 +86,11 @@ export class VscodePoolWorker implements PoolWorker {
 		const debugArg = this.#debugArg();
 		if (debugArg) launchArgs.push(debugArg);
 
+		// Append user-provided launch args if any
+		if (this.#customOptions.launchArgs) {
+			launchArgs.push(...this.#customOptions.launchArgs);
+		}
+
 		const extensionTestsEnv: Record<string, string> = {
 			VITEST_VSCODE_ADDRESS: address,
 		};
@@ -95,6 +100,11 @@ export class VscodePoolWorker implements PoolWorker {
 
 		this.#testRunPromise = runTests({
 			version: this.#customOptions.version,
+			vscodeExecutablePath: this.#customOptions.vscodeExecutablePath,
+			reuseMachineInstall: this.#customOptions.reuseMachineInstall,
+			platform: this.#customOptions.platform,
+			cachePath: this.#customOptions.cachePath,
+			timeout: this.#customOptions.timeout,
 			extensionDevelopmentPath,
 			extensionTestsPath: WORKER_PATH,
 			reporter: new SilentReporter(),

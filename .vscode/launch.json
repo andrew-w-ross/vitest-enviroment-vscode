@@ -15,10 +15,7 @@
 			"args": ["run", "--inspect-brk", "--no-file-parallelism"],
 			"smartStep": true,
 			"console": "integratedTerminal",
-			"outFiles": [
-				"${workspaceFolder}/packages/vitest-environment-vscode/dist/**/*.js",
-				"${workspaceFolder}/packages/dummy-extension/dist/**/*.js"
-			],
+			"outFiles": ["${workspaceFolder}/packages/**/dist/**/*.js"],
 			"sourceMaps": true,
 			"preLaunchTask": "build:debug-pool"
 		},

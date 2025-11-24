@@ -7,7 +7,13 @@ export { vitestVscodeConfigSchema, type VitestVscodeConfig } from './config';
 const POOL_NAME = 'vitest-environment-vscode';
 
 export function vsCodeWorker(configInput: VitestVscodeConfig): PoolRunnerInitializer {
-	const customConfig = vitestVscodeConfigSchema.parse(configInput);
+	// Allow VSCODE_VERSION environment variable to override the version
+	const input = { ...configInput };
+	if (process.env.VSCODE_VERSION) {
+		input.version = process.env.VSCODE_VERSION;
+	}
+
+	const customConfig = vitestVscodeConfigSchema.parse(input);
 
 	return {
 		name: POOL_NAME,
