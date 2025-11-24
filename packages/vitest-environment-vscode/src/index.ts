@@ -5,7 +5,6 @@ import { VscodePoolWorker } from './VscodePoolWorker';
 export { vitestVscodeConfigSchema, type VitestVscodeConfig } from './config';
 
 const POOL_NAME = 'vitest-environment-vscode';
-console.log(`[${POOL_NAME}] Started`);
 
 export function vsCodeWorker(configInput: VitestVscodeConfig): PoolRunnerInitializer {
 	const customConfig = vitestVscodeConfigSchema.parse(configInput);
