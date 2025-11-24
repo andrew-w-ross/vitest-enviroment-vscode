@@ -1,13 +1,20 @@
 {
-	"extends": "./tsconfig.app.json",
+	"extends": "./tsconfig.base.json",
 	"compilerOptions": {
 		"module": "esnext",
+		"target": "esnext",
+		"lib": ["ESNext"],
 		"moduleResolution": "bundler",
-		"types": [
-			"node"
-		],
+		"types": ["node"],
+		"noEmit": true,
+		"composite": false,
 		"rootDir": "${configDir}",
-		"outDir": "${configDir}/node_modules/.cache/tsbuild/dist-test",
-		"tsBuildInfoFile": "${configDir}/node_modules/.cache/tsbuild/tsconfig.test.tsbuildinfo"
-	}
+		"tsBuildInfoFile": "${configDir}/node_modules/.cache/tsbuildinfo/tsconfig.test.tsbuildinfo"
+	},
+	"include": [
+		"${configDir}/src/**/*.test.ts",
+		"${configDir}/src/**/*.spec.ts",
+		"${configDir}/src/**/*.test-d.ts"
+	],
+	"references": [{ "path": "./tsconfig.app.json" }]
 }

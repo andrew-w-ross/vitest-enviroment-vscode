@@ -7,76 +7,34 @@
 		{
 			"type": "node",
 			"request": "launch",
-			"name": "Run Integration Tests",
+			"name": "Debug Pool",
 			"autoAttachChildProcesses": true,
 			"cwd": "${workspaceFolder}/packages/dummy-extension",
-			"skipFiles": [
-				"<node_internals>/**",
-				"**/node_modules/**"
-			],
+			"skipFiles": ["<node_internals>/**"],
 			"program": "${workspaceRoot}/node_modules/vitest/vitest.mjs",
-			"args": [
-				"run"
-			],
+			"args": ["run", "--inspect-brk", "--no-file-parallelism"],
 			"smartStep": true,
-			"console": "integratedTerminal"
-		},
-		{
-			"name": "Dummy Extension",
-			"type": "extensionHost",
-			"request": "launch",
-			"runtimeExecutable": "${execPath}",
-			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}/packages/dummy-extension"
-			]
-		},
-		{
-			"name": "Worker Debug",
-			"type": "extensionHost",
-			"request": "launch",
-			"preLaunchTask": "build:watch vitest-enviroment-vscode",
-			"runtimeExecutable": "${execPath}",
-			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}/packages/dummy-extension",
-				"--extensionTestsPath=${workspaceFolder}/packages/vitest-environment-vscode/dist/worker-entry"
-			],
+			"console": "integratedTerminal",
 			"outFiles": [
-				"${workspaceFolder}/packages/vitest-environment-vscode/dist/**/*.js"
-			]
+				"${workspaceFolder}/packages/vitest-environment-vscode/dist/**/*.js",
+				"${workspaceFolder}/packages/dummy-extension/dist/**/*.js"
+			],
+			"sourceMaps": true,
+			"preLaunchTask": "build:debug-pool"
 		},
 		{
-			"name": "Attach Worker",
 			"type": "node",
 			"request": "attach",
-			"port": 9229,
-			"address": "localhost",
-			"localRoot": "${workspaceFolder}",
-			"remoteRoot": "${workspaceFolder}",
-			"outFiles": [
-				"${workspaceFolder}/packages/vitest-environment-vscode/dist/**/*.js"
-			],
-			"skipFiles": [
-				"<node_internals>/**",
-				"**/node_modules/**",
-				"**/bootstrap-fork.js",
-				"**/extensionHostProcess.js",
-				"**/@vscode/**/out/**/*.js"
-			],
-			"restart": {
-				"maxAttempts": 5
-			},
-			"smartStep": true,
-			"timeout": 30000,
-			"continueOnAttach": true
+			"name": "Attach to vscode-worker",
+			"continueOnAttach": true,
+			"port": 9229
 		}
 	],
 	"compounds": [
 		{
-			"name": "Integration + Attach",
-			"configurations": [
-				"Run Integration Tests",
-				"Attach Worker"
-			]
+			"name": "Debug Vitest",
+			"configurations": ["Debug Pool", "Attach to vscode-worker"],
+			"stopAll": true
 		}
 	]
 }

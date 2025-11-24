@@ -2,9 +2,6 @@
 	"files": [],
 	"references": [
 		{
-			"path": "./packages/typescript-configs"
-		},
-		{
 			"path": "./packages/vitest-environment-vscode"
 		},
 		{

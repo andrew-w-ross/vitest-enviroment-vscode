@@ -1,12 +1,22 @@
 {
 	"compilerOptions": {
 		"strict": true,
-		"verbatimModuleSyntax": true,
+		"noUncheckedIndexedAccess": true,
+		"useUnknownInCatchVariables": true,
+		"noImplicitOverride": true,
+		"noFallthroughCasesInSwitch": true,
+		"forceConsistentCasingInFileNames": true,
 		"isolatedModules": true,
-		"noUncheckedSideEffectImports": true,
+		"verbatimModuleSyntax": true,
 		"moduleDetection": "force",
 		"skipLibCheck": true,
 		"esModuleInterop": true,
-		"allowSyntheticDefaultImports": true
+		"allowSyntheticDefaultImports": true,
+		"noUncheckedSideEffectImports": true,
+		"resolveJsonModule": true,
+		"baseUrl": ".",
+		"paths": {
+			"~/*": ["${configDir}/src/*"]
+		}
 	}
 }

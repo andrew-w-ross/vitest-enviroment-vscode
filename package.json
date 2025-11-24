@@ -1,50 +1,51 @@
 {
-  "name": "repo-root",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "packageManager": "yarn@4.10.3",
-  "description": "Monorepo for Vitest environment for VS Code",
-  "workspaces": [
-    "packages/*"
-  ],
-  "scripts": {
-    "build": "turbo run build",
-    "build:watch": "turbo run build:watch",
-    "prerelease": "turbo run prerelease",
-    "typecheck": "turbo run typecheck",
-    "typecheck:watch": "turbo run typecheck:watch",
-    "test": "turbo run test",
-    "test:watch": "turbo run test:watch",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
-  },
-  "keywords": [
-    "vitest",
-    "vscode",
-    "environment"
-  ],
-  "author": "",
-  "license": "MIT",
-  "prettier": {
-    "useTabs": true,
-    "singleQuote": true,
-    "trailingComma": "es5",
-    "printWidth": 100,
-    "arrowParens": "always"
-  },
-  "devDependencies": {
-    "@eslint/compat": "^1.4.0",
-    "@eslint/js": "^9.38.0",
-    "eslint": "^9.38.0",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-config-turbo": "^2.5.8",
-    "globals": "^16.4.0",
-    "prettier": "^3.6.2",
-    "turbo": "^2.5.8",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.46.1"
-  }
+	"name": "repo-root",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"packageManager": "yarn@4.10.3",
+	"description": "Monorepo for Vitest environment for VS Code",
+	"workspaces": [
+		"packages/*"
+	],
+	"scripts": {
+		"build": "turbo run build",
+		"build:watch": "turbo run build:watch",
+		"prerelease": "turbo run prerelease",
+		"typecheck": "turbo run typecheck",
+		"typecheck:watch": "turbo run typecheck:watch",
+		"test": "turbo run test",
+		"test:watch": "turbo run test:watch",
+		"clean": "rm -rf .turbo && find . -path '*/node_modules/.cache/tsbuildinfo/*.tsbuildinfo' -delete",
+		"lint": "eslint .",
+		"lint:fix": "eslint . --fix",
+		"format": "prettier --write .",
+		"format:check": "prettier --check ."
+	},
+	"keywords": [
+		"vitest",
+		"vscode",
+		"environment"
+	],
+	"author": "",
+	"license": "MIT",
+	"prettier": {
+		"useTabs": true,
+		"singleQuote": true,
+		"trailingComma": "es5",
+		"printWidth": 100,
+		"arrowParens": "always"
+	},
+	"devDependencies": {
+		"@eslint/compat": "^2.0.0",
+		"@eslint/js": "^9.39.1",
+		"eslint": "^9.39.1",
+		"eslint-config-prettier": "^10.1.8",
+		"eslint-config-turbo": "^2.6.1",
+		"globals": "^16.5.0",
+		"prettier": "^3.6.2",
+		"turbo": "^2.6.1",
+		"typescript": "^5.9.3",
+		"typescript-eslint": "^8.47.0"
+	}
 }

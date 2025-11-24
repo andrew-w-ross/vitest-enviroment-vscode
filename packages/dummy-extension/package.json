@@ -27,10 +27,10 @@
 	"devDependencies": {
 		"@repo/typescript-configs": "workspace:*",
 		"@types/node": "^24.8.1",
-		"@types/vscode": "^1.105.0",
+		"@types/vscode": "^1.106.1",
 		"typescript": "^5.9.3",
-		"vite": "^7.1.10",
-		"vitest": "^3.2.4",
+		"vite": "^7.2.4",
+		"vitest": "^4.0.13",
 		"vitest-environment-vscode": "workspace:*"
 	}
 }

@@ -19,7 +19,20 @@ export default defineConfig(
 	...turboConfig,
 	{
 		rules: {
+			'@typescript-eslint/no-unsafe-return': 'off',
 			'@typescript-eslint/consistent-type-definitions': ['error', 'type'],
+			'@typescript-eslint/no-unused-vars': [
+				'error',
+				{
+					args: 'all',
+					argsIgnorePattern: '^_',
+					caughtErrors: 'all',
+					caughtErrorsIgnorePattern: '^_',
+					destructuredArrayIgnorePattern: '^_',
+					varsIgnorePattern: '^_',
+					ignoreRestSiblings: true,
+				},
+			],
 		},
 		languageOptions: {
 			parserOptions: {
@@ -29,7 +42,7 @@ export default defineConfig(
 		},
 	},
 	{
-		files: ['**/*.js'],
+		files: ['**/*.js', '**/*.cjs'],
 		extends: [tseslint.configs.disableTypeChecked],
 		languageOptions: {
 			globals: globals.node,

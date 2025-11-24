@@ -12,6 +12,16 @@
 			"problemMatcher": []
 		},
 		{
+			"label": "build:vitest-environment-vscode",
+			"type": "shell",
+			"command": "yarn build --filter=vitest-environment-vscode",
+			"options": {
+				"cwd": "${workspaceFolder}/packages/vitest-environment-vscode"
+			},
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
 			"label": "build:watch vitest-enviroment-vscode",
 			"type": "shell",
 			"command": "yarn turbo run build:watch --filter=vitest-environment-vscode",
@@ -29,50 +39,46 @@
 			}
 		},
 		{
+			"label": "build:dummy-extension",
+			"type": "shell",
+			"command": "yarn build --filter=dummy-extension",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": []
+		},
+		{
 			"label": "typecheck",
 			"type": "shell",
 			"command": "yarn typecheck",
 			"group": "build",
-			"problemMatcher": [
-				"$tsc"
-			]
+			"problemMatcher": ["$tsc"]
+		},
+		{
+			"label": "typecheck:vitest-environment-vscode",
+			"type": "shell",
+			"command": "yarn typecheck --filter=vitest-environment-vscode --log-prefix=none",
+			"group": "build",
+			"problemMatcher": {
+				"base": "$tsc",
+				"fileLocation": [
+					"relative",
+					"${workspaceFolder}/packages/vitest-environment-vscode"
+				]
+			}
 		},
 		{
 			"label": "typecheck:watch",
 			"type": "shell",
 			"command": "yarn typecheck:watch",
 			"isBackground": true,
-			"problemMatcher": [
-				"$tsc-watch"
-			]
+			"problemMatcher": ["$tsc-watch"]
 		},
 		{
-			"label": "test:unit",
+			"label": "test",
 			"type": "shell",
-			"command": "yarn test:unit",
-			"group": "test",
-			"isBackground": true,
-			"problemMatcher": []
-		},
-		{
-			"label": "test:unit:run",
-			"type": "shell",
-			"command": "yarn test:unit:run",
-			"group": "test",
-			"problemMatcher": []
-		},
-		{
-			"label": "test:integration",
-			"type": "shell",
-			"command": "yarn test:integration",
-			"group": "test",
-			"isBackground": true,
-			"problemMatcher": []
-		},
-		{
-			"label": "test:integration:run",
-			"type": "shell",
-			"command": "yarn test:integration:run",
+			"command": "yarn test",
 			"group": {
 				"kind": "test",
 				"isDefault": true
@@ -80,20 +86,29 @@
 			"problemMatcher": []
 		},
 		{
+			"label": "test:watch",
+			"type": "shell",
+			"command": "yarn test:watch",
+			"group": "test",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
 			"label": "lint",
 			"type": "shell",
 			"command": "yarn lint",
-			"problemMatcher": [
-				"$eslint-stylish"
-			]
+			"problemMatcher": ["$eslint-stylish"]
 		},
 		{
 			"label": "lint:fix",
 			"type": "shell",
 			"command": "yarn lint:fix",
-			"problemMatcher": [
-				"$eslint-stylish"
-			]
+			"problemMatcher": ["$eslint-stylish"]
+		},
+		{
+			"label": "build:debug-pool",
+			"dependsOn": ["build:dummy-extension", "typecheck:vitest-environment-vscode"],
+			"problemMatcher": []
 		}
 	]
 }
