@@ -1,0 +1,160 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: patch
+      prerelease:
+        description: 'Is this a prerelease?'
+        required: false
+        type: boolean
+        default: false
+      release_notes:
+        description: 'Optional release notes (Markdown). Leave blank to auto-generate.'
+        required: false
+        type: string
+        default: ''
+      tolerate_republish:
+        description: 'Allow republishing if version already exists on npm'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: release-vitest-environment-vscode
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    # 🔒 Only allow this workflow to run when dispatched from main
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure up-to-date main & tags
+        run: |
+          git fetch origin main --tags
+          git checkout -B release-tmp origin/main
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build
+        run: yarn build
+
+      - name: Run tests
+        run: xvfb-run -a yarn test
+
+      - name: Configure git
+        run: |
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@example.com"
+
+      - name: Bump version and compute tag
+        id: version
+        env:
+          VERSION_TYPE: ${{ github.event.inputs.version_type }}
+          PRERELEASE: ${{ github.event.inputs.prerelease }}
+          WORKSPACE_NAME: vitest-environment-vscode
+          PACKAGE_DIR: packages/vitest-environment-vscode
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "$PRERELEASE" = "true" ]; then
+            BUMP_TYPE="pre${VERSION_TYPE}"
+          else
+            BUMP_TYPE="$VERSION_TYPE"
+          fi
+
+          yarn workspace "$WORKSPACE_NAME" version "$BUMP_TYPE" --immediate
+
+          NEW_VERSION=$(node -p "require('./$PACKAGE_DIR/package.json').version")
+
+          TAG="v$NEW_VERSION"
+
+          if git ls-remote --tags origin "$TAG" | grep -q "$TAG$"; then
+            echo "Tag $TAG already exists on origin. Aborting."
+            exit 1
+          fi
+
+          echo "value=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "is_prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
+
+      - name: Publish to npm (Trusted Publishing)
+        env:
+          IS_PRERELEASE: ${{ steps.version.outputs.is_prerelease }}
+          TOLERATE_REPUBLISH: ${{ github.event.inputs.tolerate_republish }}
+          WORKSPACE_NAME: vitest-environment-vscode
+        run: |
+          set -euo pipefail
+          PUBLISH_FLAGS="--access public"
+
+          if [ "$IS_PRERELEASE" = "true" ]; then
+            PUBLISH_FLAGS="$PUBLISH_FLAGS --tag next"
+          fi
+
+          if [ "$TOLERATE_REPUBLISH" = "true" ]; then
+            PUBLISH_FLAGS="$PUBLISH_FLAGS --tolerate-republish"
+          fi
+
+          yarn workspace "$WORKSPACE_NAME" npm publish $PUBLISH_FLAGS
+
+      - name: Commit bump, rebase, and push tag
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo "No files to commit (version already current). Continuing with existing commit."
+          else
+            git commit -m "chore: release $TAG"
+          fi
+
+          git fetch origin main
+          git rebase origin/main
+          git tag -f "$TAG"
+          git push --force-with-lease origin HEAD:main
+          git push origin "$TAG"
+
+      - name: Create GitHub release
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+          RELEASE_NOTES: ${{ github.event.inputs.release_notes }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          if [ -n "$RELEASE_NOTES" ]; then
+            printf "%s" "$RELEASE_NOTES" > release-notes.txt
+            gh release create "$TAG" --title "$TAG" --notes-file release-notes.txt --verify-tag
+          else
+            gh release create "$TAG" --title "$TAG" --generate-notes --verify-tag
+          fi
