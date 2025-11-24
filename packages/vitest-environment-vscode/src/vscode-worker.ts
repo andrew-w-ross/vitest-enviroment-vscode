@@ -1,4 +1,3 @@
-import 'core-js/proposals/explicit-resource-management';
 import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve as resolvePath } from 'node:path';
@@ -10,7 +9,7 @@ import { waitForConnection } from '~/utils/websocket';
 import { init, runBaseTests as vitestRunBaseTests } from 'vitest/worker';
 import type { ControlRequest } from './utils/workerRequestSerializer';
 import { deserialize, serialize } from './utils/workerRequestSerializer';
-import { invoke, once } from 'indisposed/no-polyfill';
+import { invoke, once } from 'indisposed';
 
 const workerRequire = createRequire(import.meta.url);
 const WORKER_NAME = 'vitest-environment-vscode';

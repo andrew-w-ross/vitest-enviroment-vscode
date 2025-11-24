@@ -25,6 +25,7 @@ export default defineConfig({
 	test: {
 		pool: vsCodeWorker({
 			version: 'insiders',
+			reuseWorker: true,
 		}),
 		testTimeout: 20000,
 		hookTimeout: 20000,
