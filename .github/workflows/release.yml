@@ -109,6 +109,13 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "is_prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
 
+      - name: Sync root README for npm publish
+        env:
+          PACKAGE_DIR: packages/vitest-environment-vscode
+        run: |
+          set -euo pipefail
+          cp README.md "$PACKAGE_DIR/README.md"
+
       - name: Publish to npm (Trusted Publishing)
         env:
           IS_PRERELEASE: ${{ steps.version.outputs.is_prerelease }}
@@ -127,6 +134,10 @@ jobs:
           fi
 
           yarn workspace "$WORKSPACE_NAME" npm publish $PUBLISH_FLAGS
+
+      - name: Restore package README
+        if: always()
+        run: git restore packages/vitest-environment-vscode/README.md
 
       - name: Commit bump, rebase, and push tag
         env:
