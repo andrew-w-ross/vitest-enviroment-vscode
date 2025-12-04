@@ -49,6 +49,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Configure deploy key
+        env:
+          DEPLOY_KEY: ${{ secrets.RELEASE_WORKFLOW_DEPLOY_KEY }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/release-workflow-deploy-key
+          chmod 600 ~/.ssh/release-workflow-deploy-key
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          echo "GIT_SSH_COMMAND=ssh -i ~/.ssh/release-workflow-deploy-key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" >> "$GITHUB_ENV"
+
       - name: Ensure up-to-date main & tags
         run: |
           git fetch origin main --tags
