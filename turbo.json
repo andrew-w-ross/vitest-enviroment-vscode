@@ -38,14 +38,6 @@
 			"cache": false,
 			"outputs": []
 		},
-		"format": {
-			"cache": false,
-			"outputs": []
-		},
-		"prerelease": {
-			"dependsOn": ["^build", "build"],
-			"outputs": ["dist/**"]
-		},
 		"dev": {
 			"cache": false,
 			"persistent": true

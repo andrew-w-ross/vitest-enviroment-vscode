@@ -27,14 +27,12 @@
 	"scripts": {
 		"build": "vite build --mode development",
 		"build:watch": "vite build --mode development --watch",
-		"prerelease": "yarn build && yarn typecheck",
 		"typecheck": "tsc -p tsconfig.test.json --noEmit && tsc -p tsconfig.node.json --noEmit",
 		"typecheck:watch": "tsc -p tsconfig.test.json --noEmit --watch --preserveWatchOutput & tsc -p tsconfig.node.json --noEmit --watch --preserveWatchOutput",
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"lint": "eslint .",
-		"lint:fix": "eslint . --fix",
-		"format": "prettier --write ."
+		"lint:fix": "eslint . --fix"
 	},
 	"keywords": [
 		"vitest",

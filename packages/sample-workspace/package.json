@@ -1,0 +1,8 @@
+{
+	"name": "fixture-workspace-todos",
+	"version": "0.0.1",
+	"private": true,
+	"type": "module",
+	"main": "./src/index.ts",
+	"description": "Fake workspace project full of TODOs, used by vitest-environment-vscode tests and examples."
+}

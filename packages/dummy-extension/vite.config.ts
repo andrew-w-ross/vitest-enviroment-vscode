@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config';
-import { resolve, dirname } from 'path';
+import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { vsCodeWorker } from 'vitest-environment-vscode';
 
@@ -26,6 +26,10 @@ export default defineConfig({
 		pool: vsCodeWorker({
 			version: 'insiders',
 			reuseWorker: true,
+			// Open the fake workspace project so vscode.workspace APIs see its files.
+			// Relative paths are resolved against the Vitest project root
+			// (here: packages/dummy-extension).
+			workspaceRoot: '../sample-workspace',
 		}),
 		include: ['src/**/*.{test,spec}.ts'],
 		globals: false,

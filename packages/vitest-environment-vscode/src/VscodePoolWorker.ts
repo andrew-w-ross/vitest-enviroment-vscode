@@ -1,6 +1,7 @@
 import 'core-js/proposals/explicit-resource-management';
 import { runTests, SilentReporter } from '@vscode/test-electron';
 import { createRequire } from 'node:module';
+import { isAbsolute, resolve as resolvePath } from 'node:path';
 import type { PoolOptions, PoolWorker, WorkerRequest } from 'vitest/node';
 import { type AddressInfo, type WebSocket } from 'ws';
 import { EnviromentVscodeError, NotImplementedError } from './errors';
@@ -82,6 +83,17 @@ export class VscodePoolWorker implements PoolWorker {
 		const address = getAddress(wss.address());
 
 		const launchArgs: string[] = [`--user-data-dir=/tmp/vscode-test/${process.pid}`];
+
+		// If a workspaceRoot is configured, open that folder as the VS Code
+		// workspace so vscode.workspace APIs see the intended files. Relative
+		// paths are resolved against the Vitest project root.
+		if (this.#customOptions.workspaceRoot) {
+			const root = this.#customOptions.workspaceRoot;
+			const absoluteRoot = isAbsolute(root)
+				? root
+				: resolvePath(extensionDevelopmentPath, root);
+			launchArgs.push(absoluteRoot);
+		}
 
 		const debugArg = this.#debugArg();
 		if (debugArg) launchArgs.push(debugArg);

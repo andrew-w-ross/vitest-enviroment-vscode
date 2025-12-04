@@ -16,14 +16,17 @@
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"lint": "eslint .",
-		"lint:fix": "eslint . --fix",
-		"format": "prettier --write ."
+		"lint:fix": "eslint . --fix"
 	},
 	"contributes": {
 		"commands": [
 			{
 				"command": "dummy-extension.helloWorld",
 				"title": "Dummy Hello World"
+			},
+			{
+				"command": "dummy-extension.countWorkspaceTodos",
+				"title": "Dummy: Count TODOs in workspace"
 			}
 		]
 	},

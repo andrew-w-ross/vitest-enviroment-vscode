@@ -43,6 +43,12 @@ export const vitestVscodeConfigSchema = z
 		 * Number of milliseconds after which to time out if no data is received when downloading VS Code.
 		 */
 		timeout: z.number().optional(),
+		/**
+		 * Workspace root folder to open in VS Code when running tests.
+		 * If a relative path is provided, it is resolved against the Vitest
+		 * project root (i.e. your Vitest config directory).
+		 */
+		workspaceRoot: z.string().optional(),
 	})
 	.loose();
 
