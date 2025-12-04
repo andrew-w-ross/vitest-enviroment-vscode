@@ -122,7 +122,6 @@ export class VscodePoolWorker implements PoolWorker {
 		}).then(([data]) => deserialize(data));
 
 		if (result.type !== 'ready') {
-			//We expect a ready response lll
 			throw new NotImplementedError();
 		}
 		ws.send(serialize({ type: 'ready_ack' }));

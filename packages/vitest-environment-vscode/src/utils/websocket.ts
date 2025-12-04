@@ -3,29 +3,8 @@ import { EnviromentVscodeError } from '../errors';
 import { invoke, once, toAsyncDisposable } from 'indisposed';
 
 /**
- * Create a WebSocket server bound to localhost with automatic port allocation.
- * Returns an async disposable that will automatically close the server when disposed.
- * @returns A disposable object containing the WebSocket server instance
- * @throws {EnviromentVscodeError} When server fails to bind or address is invalid
- * @example
- * ```ts
- * // Automatic cleanup with await using
- * await using server = await createWebSocketServer();
- * const address = server.address();
- * console.log(`Server listening on port ${address.port}`);
- * // Server automatically closes when scope exits
- *
- * // Manual cleanup when needed
- * const server = await createWebSocketServer();
- * try {
- *   // Use the server for WebSocket operations
- *   server.on('connection', (ws) => {
- *     ws.send('Hello!');
- *   });
- * } finally {
- *   await server[Symbol.asyncDispose]();
- * }
- * ```
+ * Start a localhost WebSocket server on a random port and return an async disposable wrapper.
+ * Rejects with `EnviromentVscodeError` when the server fails to bind.
  */
 export async function createWebSocketServer() {
 	const wss = new WebSocketServer({ host: '127.0.0.1', port: 0 });
@@ -49,30 +28,8 @@ export async function createWebSocketServer() {
 }
 
 /**
- * Wait for the next WebSocket client connection on the given server.
- * Returns an async disposable that will automatically close the client when disposed.
- * @param wss - The WebSocket server to wait for a connection on
- * @returns A disposable object containing the WebSocket client instance
- * @throws {EnviromentVscodeError} When server closes or encounters an error before a connection
- * @example
- * ```ts
- * // Automatic cleanup with await using
- * await using server = await createWebSocketServer();
- * await using client = await waitForWebSocketClient(server);
- * client.send('Hello from server!');
- * // Client automatically closes when scope exits
- *
- * // Manual cleanup when needed
- * const server = await createWebSocketServer();
- * const client = await waitForWebSocketClient(server);
- * try {
- *   client.on('message', (data) => {
- *     console.log('Received:', data.toString());
- *   });
- * } finally {
- *   await client[Symbol.asyncDispose]();
- * }
- * ```
+ * Wait for the next inbound client connection and return an async disposable WebSocket instance.
+ * Throws `EnviromentVscodeError` if the server closes or errors before a client appears.
  */
 export async function waitForWebSocketClient(wss: WebSocketServer) {
 	const ws = await invoke(async () => {
@@ -102,21 +59,8 @@ export async function waitForWebSocketClient(wss: WebSocketServer) {
 }
 
 /**
- * Connect to a remote WebSocket endpoint and wait for the handshake to finish.
- * Unlike {@link waitForWebSocketClient}, this operates from the client side and
- * returns the raw `WebSocket` instance so callers can manage its lifecycle.
- * @param address - Full WebSocket address, e.g. `ws://127.0.0.1:12345`
- * @returns The connected WebSocket instance
- * @throws {EnviromentVscodeError} When the remote server closes before opening
- * @example
- * ```ts
- * import type { AddressInfo } from 'net';
- *
- * await using server = await createWebSocketServer();
- * const { port } = server.address() as AddressInfo;
- * const ws = await waitForConnection(`ws://127.0.0.1:${port}`);
- * ws.send('ping');
- * ```
+ * Connect to a remote WebSocket endpoint and wait until the handshake finishes.
+ * Throws `EnviromentVscodeError` if the remote side shuts down before opening.
  */
 export async function waitForConnection(address: string) {
 	const ws = new WebSocket(address);

@@ -1,11 +1,17 @@
 import { defineConfig } from 'vitest/config';
+import type { Plugin as VitestPlugin } from 'vitest/config';
 import tsconfigPaths from 'vite-tsconfig-paths';
+import dts from 'vite-plugin-dts';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import pkg from './package.json' with { type: 'json' };
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+const declarationPlugin = dts({
+	tsconfigPath: resolve(__dirname, 'tsconfig.app.json'),
+}) as VitestPlugin;
 
 // Generate entry points from package.json exports
 const entry = Object.entries(pkg.exports as Record<string, { import?: string }>).reduce(
@@ -23,6 +29,7 @@ const entry = Object.entries(pkg.exports as Record<string, { import?: string }>)
 
 export default defineConfig({
 	plugins: [
+		declarationPlugin,
 		//@ts-expect-error Plugins broken for now
 		tsconfigPaths({
 			configNames: ['tsconfig.app.json'],

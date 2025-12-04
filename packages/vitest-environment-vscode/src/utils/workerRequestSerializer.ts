@@ -16,7 +16,6 @@ export function serialize(request: Request): Buffer {
 	return Buffer.from(json, 'utf-8');
 }
 
-//TODO: Fix this mess
 export function deserialize(value: unknown): Request {
 	let json: string;
 

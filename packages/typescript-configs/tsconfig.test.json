@@ -11,10 +11,5 @@
 		"rootDir": "${configDir}",
 		"tsBuildInfoFile": "${configDir}/node_modules/.cache/tsbuildinfo/tsconfig.test.tsbuildinfo"
 	},
-	"include": [
-		"${configDir}/src/**/*.test.ts",
-		"${configDir}/src/**/*.spec.ts",
-		"${configDir}/src/**/*.test-d.ts"
-	],
-	"references": [{ "path": "./tsconfig.app.json" }]
+	"include": ["${configDir}/src/**/*.ts"]
 }

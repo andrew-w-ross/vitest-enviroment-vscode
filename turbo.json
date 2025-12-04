@@ -13,12 +13,8 @@
 			"persistent": true
 		},
 		"typecheck": {
-			"dependsOn": ["^typecheck"],
-			"outputs": [
-				"dist/**/*.d.ts",
-				"dist/**/*.d.ts.map",
-				"node_modules/.cache/tsbuildinfo/**/*.tsbuildinfo"
-			]
+			"dependsOn": ["^build"],
+			"outputs": []
 		},
 		"typecheck:watch": {
 			"cache": false,
@@ -34,11 +30,15 @@
 			"persistent": true
 		},
 		"lint": {
-			"dependsOn": ["^build"],
+			"dependsOn": ["^typecheck"],
 			"outputs": []
 		},
 		"lint:fix": {
-			"dependsOn": ["^build"],
+			"dependsOn": ["^typecheck"],
+			"cache": false,
+			"outputs": []
+		},
+		"format": {
 			"cache": false,
 			"outputs": []
 		},
