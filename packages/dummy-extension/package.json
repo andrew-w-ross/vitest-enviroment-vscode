@@ -14,7 +14,10 @@
 		"typecheck": "tsc --build",
 		"typecheck:watch": "tsc --build --watch",
 		"test": "vitest run",
-		"test:watch": "vitest"
+		"test:watch": "vitest",
+		"lint": "eslint .",
+		"lint:fix": "eslint . --fix",
+		"format": "prettier --write ."
 	},
 	"contributes": {
 		"commands": [
@@ -29,8 +32,8 @@
 		"@types/node": "^24.8.1",
 		"@types/vscode": "^1.106.1",
 		"typescript": "^5.9.3",
-		"vite": "^7.2.4",
-		"vitest": "^4.0.13",
+		"vite": "^7.2.6",
+		"vitest": "^4.0.15",
 		"vitest-environment-vscode": "workspace:*"
 	}
 }

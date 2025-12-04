@@ -8,11 +8,13 @@
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
-			"import": "./dist/index"
+			"import": "./dist/index",
+			"default": "./dist/index"
 		},
 		"./vscode-worker": {
 			"types": "./dist/vscode-worker.d.ts",
-			"import": "./dist/vscode-worker"
+			"import": "./dist/vscode-worker",
+			"default": "./dist/vscode-worker"
 		},
 		"./vscode-worker.cjs": {
 			"require": "./vscode-worker.cjs"
@@ -26,10 +28,13 @@
 		"build": "vite build --mode development",
 		"build:watch": "vite build --mode development --watch",
 		"prerelease": "yarn build && yarn typecheck",
-		"typecheck": "tsc --build",
-		"typecheck:watch": "tsc --build --watch",
+		"typecheck": "tsc -p tsconfig.test.json --noEmit && tsc -p tsconfig.node.json --noEmit",
+		"typecheck:watch": "tsc -p tsconfig.test.json --noEmit --watch --preserveWatchOutput & tsc -p tsconfig.node.json --noEmit --watch --preserveWatchOutput",
 		"test": "vitest run",
-		"test:watch": "vitest"
+		"test:watch": "vitest",
+		"lint": "eslint .",
+		"lint:fix": "eslint . --fix",
+		"format": "prettier --write ."
 	},
 	"keywords": [
 		"vitest",
@@ -41,12 +46,12 @@
 	"devDependencies": {
 		"@repo/typescript-configs": "workspace:*",
 		"@types/node": "^24.8.1",
-		"@types/vscode": "^1.106.1",
 		"@types/ws": "^8.18.1",
 		"typescript": "^5.9.3",
-		"vite": "^7.2.4",
+		"vite": "^7.2.6",
+		"vite-plugin-dts": "^4.5.4",
 		"vite-tsconfig-paths": "^5.1.4",
-		"vitest": "^4.0.13"
+		"vitest": "^4.0.15"
 	},
 	"peerDependencies": {
 		"vitest": ">=3.2.4"
@@ -56,8 +61,7 @@
 		"core-js": "^3.47.0",
 		"devalue": "^5.5.0",
 		"indisposed": "^0.0.7",
-		"type-fest": "^5.2.0",
 		"ws": "^8.18.3",
-		"zod": "^4.1.12"
+		"zod": "^4.1.13"
 	}
 }
