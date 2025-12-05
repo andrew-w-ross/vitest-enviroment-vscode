@@ -1,6 +1,7 @@
 import 'core-js/proposals/explicit-resource-management';
 import { runTests, SilentReporter } from '@vscode/test-electron';
 import { createRequire } from 'node:module';
+import { existsSync } from 'node:fs';
 import { isAbsolute, resolve as resolvePath } from 'node:path';
 import type { PoolOptions, PoolWorker, WorkerRequest } from 'vitest/node';
 import { type AddressInfo, type WebSocket } from 'ws';
@@ -36,6 +37,19 @@ export class VscodePoolWorker implements PoolWorker {
 	constructor(options: PoolOptions, customOptions: VitestVscodeConfig) {
 		this.#options = options;
 		this.#customOptions = customOptions;
+	}
+
+	#resolveCachePath(extensionDevelopmentPath: string) {
+		if (this.#customOptions.cachePath) {
+			return this.#customOptions.cachePath;
+		}
+
+		const nodeModulesPath = resolvePath(extensionDevelopmentPath, 'node_modules');
+		if (existsSync(nodeModulesPath)) {
+			return resolvePath(nodeModulesPath, '.cache', '.vscode-test');
+		}
+
+		return undefined;
 	}
 
 	#debugArg() {
@@ -115,7 +129,7 @@ export class VscodePoolWorker implements PoolWorker {
 			vscodeExecutablePath: this.#customOptions.vscodeExecutablePath,
 			reuseMachineInstall: this.#customOptions.reuseMachineInstall,
 			platform: this.#customOptions.platform,
-			cachePath: this.#customOptions.cachePath,
+			cachePath: this.#resolveCachePath(extensionDevelopmentPath),
 			timeout: this.#customOptions.timeout,
 			extensionDevelopmentPath,
 			extensionTestsPath: WORKER_PATH,

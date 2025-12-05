@@ -36,7 +36,9 @@ export const vitestVscodeConfigSchema = z
 		platform: z.string().optional(),
 		/**
 		 * Path where the downloaded VS Code instance is stored.
-		 * Defaults to `.vscode-test` within your working directory.
+		 * Defaults to `node_modules/.cache/.vscode-test` within your project
+		 * if a `node_modules` directory exists, otherwise `.vscode-test` in
+		 * your project root.
 		 */
 		cachePath: z.string().optional(),
 		/**

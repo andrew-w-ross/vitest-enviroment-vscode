@@ -11,7 +11,7 @@
     - `packages/typescript-configs` - Shared TypeScript configuration files
 
 - **Key Artifacts:**
-    - `README.md` for architecture details, repository layout, and the Mermaid sequence diagram under **How It Works**.
+    - `README.md` (root) for architecture details, repository layout, and the Mermaid sequence diagram under **How It Works**. This file is also copied into `packages/vitest-environment-vscode/README.md` during the release workflow, so when instructions mention "update the README" they refer to the root `README.md`.
     - `packages/vitest-environment-vscode/src/` for implementation (pool entry point, VS Code worker, WebSocket bridge between Vitest and the VS Code Extension Host).
 
 ## Tooling Expectations
