@@ -61,15 +61,14 @@ export async function run() {
 	}).then(([data]) => deserialize(data));
 
 	// Send ready signal to pool
-	for (let i = 0; i < 11; i++) {
+	for (let i = 0; i <= 11; i++) {
 		ws.send(serialize({ type: 'ready' } satisfies ControlRequest));
 		const raceResult = await Promise.race([handShakePromise, wait(10)]);
 		if (raceResult != null && raceResult.type === 'ready_ack') {
 			break;
 		}
-		if (i > 10) {
-			throw new EnviromentVscodeError('client_ack_timeout');
-		}
+
+		throw new EnviromentVscodeError('client_ack_timeout');
 	}
 
 	const runWithLogging = async (

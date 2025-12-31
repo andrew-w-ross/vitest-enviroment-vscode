@@ -56,16 +56,17 @@ export default defineConfig({
 
 `vsCodeWorker` accepts these options (from `vitest-environment-vscode/src/config.ts`):
 
-| Option                 | Default     | Description                                                                                                                                                 |
-| ---------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `version`              | `'stable'`  | VS Code build to download: `'stable'`, `'insiders'`, or a specific version tag like `'1.95.0'`. Overridden by `VSCODE_VERSION` environment variable if set. |
-| `reuseWorker`          | `false`     | Keep the Extension Host alive between test files. Enable for speed; disable when tests need a clean VS Code instance.                                       |
-| `vscodeExecutablePath` | `undefined` | Path to a VS Code executable to use for testing. If not specified, VS Code will be downloaded based on `version`.                                           |
-| `reuseMachineInstall`  | `false`     | Use your system's VS Code settings and extensions. If `false`, uses isolated directories in `.vscode-test`.                                                 |
-| `launchArgs`           | `[]`        | Additional arguments passed to the VS Code executable. See `code --help` for available options.                                                             |
-| `platform`             | (auto)      | VS Code platform to download: `'darwin'`, `'darwin-arm64'`, `'win32-x64-archive'`, `'win32-arm64-archive'`, `'linux-x64'`, `'linux-arm64'`, `'linux-armhf'` |
-| `cachePath`            | (auto)      | Directory where downloaded VS Code instances are cached. Defaults to `.vscode-test` in your project.                                                        |
-| `timeout`              | `undefined` | Milliseconds to wait for VS Code download before timing out.                                                                                                |
+| Option                 | Default     | Description                                                                                                                                                                                         |
+| ---------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `version`              | `'stable'`  | VS Code build to download: `'stable'`, `'insiders'`, or a specific version tag like `'1.95.0'`. Overridden by `VSCODE_VERSION` environment variable if set.                                         |
+| `reuseWorker`          | `false`     | Keep the Extension Host alive between test files. Enable for speed; disable when tests need a clean VS Code instance.                                                                               |
+| `vscodeExecutablePath` | `undefined` | Path to a VS Code executable to use for testing. If not specified, VS Code will be downloaded based on `version`.                                                                                   |
+| `reuseMachineInstall`  | `false`     | Use your system's VS Code settings and extensions. If `false`, uses isolated directories in `.vscode-test`.                                                                                         |
+| `launchArgs`           | `[]`        | Additional arguments passed to the VS Code executable. See `code --help` for available options.                                                                                                     |
+| `platform`             | (auto)      | VS Code platform to download: `'darwin'`, `'darwin-arm64'`, `'win32-x64-archive'`, `'win32-arm64-archive'`, `'linux-x64'`, `'linux-arm64'`, `'linux-armhf'`                                         |
+| `cachePath`            | (auto)      | Directory where downloaded VS Code instances are cached. By default, uses `node_modules/.cache/.vscode-test` when a `node_modules` directory exists, otherwise `.vscode-test` in your project root. |
+| `timeout`              | `undefined` | Milliseconds to wait for VS Code download before timing out.                                                                                                                                        |
+| `workspaceRoot`        | `undefined` | Folder to open as the VS Code workspace root when running tests. Relative paths are resolved against the Vitest project root.                                                                       |
 
 **Common Use Cases:**
 
@@ -87,9 +88,16 @@ export default defineConfig({
     See the [full CI workflow example](.github/workflows/ci.yml) for a complete setup.
 - **Use your local VS Code:** Set `vscodeExecutablePath: '/Applications/Visual Studio Code.app/Contents/MacOS/Electron'` to test against your installed copy
 - **Test with specific settings:** Use `reuseMachineInstall: true` to test with your actual VS Code configuration
-- **Add workspace folders:** Include `launchArgs: ['path/to/workspace']` to open a specific workspace when testing
+- **Add a workspace folder:** Use `workspaceRoot: 'path/to/workspace'` (or an absolute path) to open a specific folder as the VS Code workspace when testing. Relative paths are resolved against the Vitest project root.
 
-### 3. Write Tests
+##### VS Code download cache (advanced)
+
+You normally don’t need to configure `cachePath`. By default, the pool will:
+
+- Use `node_modules/.cache/.vscode-test` in the extension project root when a `node_modules` directory exists.
+- Fall back to the default `.vscode-test` folder in the project root (the upstream `@vscode/test-electron` default) when `node_modules` does not exist.
+
+This keeps the downloaded VS Code binary inside `node_modules/.cache` when possible, instead of cluttering the workspace root. Advanced setups (for example CI with a shared/persisted cache directory) can override this by explicitly setting `cachePath`.
 
 ### 3. Write Tests
 
@@ -201,11 +209,44 @@ sequenceDiagram
 
 This is a monorepo managed with Yarn workspaces:
 
-| Package                                  | Description                                     |
-| ---------------------------------------- | ----------------------------------------------- |
-| **`packages/vitest-environment-vscode`** | The main library                                |
-| **`packages/dummy-extension`**           | Sample VS Code extension used as a test fixture |
-| **`packages/typescript-configs`**        | Shared TypeScript configurations                |
+| Package                                  | Description                                                        |
+| ---------------------------------------- | ------------------------------------------------------------------ |
+| **`packages/vitest-environment-vscode`** | The main library                                                   |
+| **`packages/dummy-extension`**           | Sample VS Code extension used as a test fixture                    |
+| **`packages/typescript-configs`**        | Shared TypeScript configurations                                   |
+| **`packages/sample-workspace`**          | Fixture workspace (`fixture-workspace-todos`) with TODOs for tests |
+
+### Example: Dummy Extension & Fake Project
+
+The `packages/dummy-extension` workspace shows how to wire a **real extension** to a **fake source project** so you can test workspace-aware features without touching a real codebase:
+
+- Fake project: `packages/sample-workspace` (the `fixture-workspace-todos` package, a tiny TypeScript app with a couple of `TODO` comments in `src/index.ts`).
+- Extension command: `dummy-extension.countWorkspaceTodos` walks the workspace files under `src/**/*.ts` (with `sample-workspace` opened as the workspace root in tests), counts `TODO` comments, and shows the total via `vscode.window.showInformationMessage` (it also returns the count for assertions).
+- Vitest config: `packages/dummy-extension/vite.config.ts` uses `vsCodeWorker(...)` and sets `workspaceRoot: '../sample-workspace'` so the VS Code Extension Host opens the fake project folder as its workspace root and `vscode.workspace` APIs can see those files.
+
+To create a similar setup in your own extension:
+
+1. Add a folder like `fixtures/sample-project/` under your extension root and drop in whatever fake sources you need.
+2. Point the pool at that folder by passing it via `launchArgs`:
+
+    ```ts
+    // vitest.config.ts in your extension repo
+    import { defineConfig } from 'vitest/config';
+    import { vsCodeWorker } from 'vitest-environment-vscode';
+
+    export default defineConfig({
+    	test: {
+    		pool: vsCodeWorker({
+    			reuseWorker: true,
+    			// Relative paths are resolved against the Vitest project root
+    			workspaceRoot: 'fixtures/sample-project',
+    		}),
+    	},
+    });
+    ```
+
+3. Implement a command that uses APIs such as `vscode.workspace.findFiles` and `vscode.workspace.fs.readFile` to walk and inspect those files.
+4. Write Vitest specs that call `vscode.commands.executeCommand('your-extension.yourCommand')` and assert on the returned value or side effects.
 
 ### Development
 
@@ -230,6 +271,9 @@ yarn typecheck
 # Lint and format
 yarn lint
 yarn format
+
+# Or just check if everything is good to go
+yarn check
 ```
 
 ## Contributing

@@ -1,13 +1,15 @@
 import 'core-js/proposals/explicit-resource-management';
-import { runTests, SilentReporter } from '@vscode/test-electron';
 import { createRequire } from 'node:module';
-import type { PoolOptions, PoolWorker, WorkerRequest } from 'vitest/node';
+import { existsSync } from 'node:fs';
+import { isAbsolute, resolve as resolvePath } from 'node:path';
+import type { PoolOptions, PoolWorker, Vitest, WorkerRequest } from 'vitest/node';
 import { type AddressInfo, type WebSocket } from 'ws';
 import { EnviromentVscodeError, NotImplementedError } from './errors';
 import type { VitestVscodeConfig } from './config';
 import { createWebSocketServer, waitForWebSocketClient } from './utils/websocket';
 import { deserialize, serialize } from './utils/workerRequestSerializer';
 import { invoke, once } from 'indisposed/no-polyfill';
+import { runVsCodeTests } from './runVsCodeTests';
 
 const require = createRequire(import.meta.url);
 const WORKER_PATH = require.resolve('vitest-environment-vscode/vscode-worker.cjs');
@@ -30,11 +32,26 @@ export class VscodePoolWorker implements PoolWorker {
 	#options: PoolOptions;
 	#customOptions: VitestVscodeConfig;
 	#stack = new AsyncDisposableStack();
+	#logger: Vitest['logger'];
 	#ws?: WebSocket;
 
 	constructor(options: PoolOptions, customOptions: VitestVscodeConfig) {
 		this.#options = options;
+		this.#logger = this.#options.project.vitest.logger;
 		this.#customOptions = customOptions;
+	}
+
+	#resolveCachePath(extensionDevelopmentPath: string) {
+		if (this.#customOptions.cachePath) {
+			return this.#customOptions.cachePath;
+		}
+
+		const nodeModulesPath = resolvePath(extensionDevelopmentPath, 'node_modules');
+		if (existsSync(nodeModulesPath)) {
+			return resolvePath(nodeModulesPath, '.cache', '.vscode-test');
+		}
+
+		return undefined;
 	}
 
 	#debugArg() {
@@ -48,13 +65,15 @@ export class VscodePoolWorker implements PoolWorker {
 		if (this.#ws == null) {
 			throw new EnviromentVscodeError('server_started_before_ready');
 		}
+
 		if (DEBUG) {
-			console.log(`[${POOL_NAME}] -> worker`, message.type);
+			this.#logger.console.debug(`[${POOL_NAME}] -> worker`, message.type);
 			if (message.type === 'run' || message.type === 'collect') {
 				const files = message.context?.files?.map((file) => file.filepath) ?? [];
-				console.log(`[${POOL_NAME}] ${message.type} files:`, files);
+				this.#logger.console.debug(`[${POOL_NAME}] ${message.type} files:`, files);
 			}
 		}
+
 		this.#ws.send(serialize(message));
 	}
 
@@ -83,6 +102,17 @@ export class VscodePoolWorker implements PoolWorker {
 
 		const launchArgs: string[] = [`--user-data-dir=/tmp/vscode-test/${process.pid}`];
 
+		// If a workspaceRoot is configured, open that folder as the VS Code
+		// workspace so vscode.workspace APIs see the intended files. Relative
+		// paths are resolved against the Vitest project root.
+		if (this.#customOptions.workspaceRoot) {
+			const root = this.#customOptions.workspaceRoot;
+			const absoluteRoot = isAbsolute(root)
+				? root
+				: resolvePath(extensionDevelopmentPath, root);
+			launchArgs.push(absoluteRoot);
+		}
+
 		const debugArg = this.#debugArg();
 		if (debugArg) launchArgs.push(debugArg);
 
@@ -94,22 +124,26 @@ export class VscodePoolWorker implements PoolWorker {
 		const extensionTestsEnv: Record<string, string> = {
 			VITEST_VSCODE_ADDRESS: address,
 		};
-		if (process.env.VITEST_ENV_VSCODE_DEBUG === '1') {
+
+		if (DEBUG) {
 			extensionTestsEnv.VITEST_ENV_VSCODE_DEBUG = '1';
 		}
 
-		this.#testRunPromise = runTests({
-			version: this.#customOptions.version,
+		// Extend timeout if debugger is attached (either via env var or inspector config)
+		const isDebugging = DEBUG || this.#options.project.config.inspector.enabled;
+
+		this.#testRunPromise = runVsCodeTests({
 			vscodeExecutablePath: this.#customOptions.vscodeExecutablePath,
-			reuseMachineInstall: this.#customOptions.reuseMachineInstall,
+			version: this.#customOptions.version,
 			platform: this.#customOptions.platform,
-			cachePath: this.#customOptions.cachePath,
-			timeout: this.#customOptions.timeout,
+			cachePath: this.#resolveCachePath(extensionDevelopmentPath),
+			reuseMachineInstall: this.#customOptions.reuseMachineInstall,
 			extensionDevelopmentPath,
 			extensionTestsPath: WORKER_PATH,
-			reporter: new SilentReporter(),
-			launchArgs,
 			extensionTestsEnv,
+			launchArgs,
+			logger: this.#logger,
+			isDebug: isDebugging,
 		});
 
 		const ws = this.#stack.use(await waitForWebSocketClient(wss));

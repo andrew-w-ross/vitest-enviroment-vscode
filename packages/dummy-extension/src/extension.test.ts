@@ -17,8 +17,8 @@ describe('dummy extension', () => {
 		// Activate the extension
 		activate(context);
 
-		// Verify the command was registered
-		expect(context.subscriptions).toHaveLength(1);
+		// Verify commands were registered
+		expect(context.subscriptions.length).toBeGreaterThanOrEqual(1);
 
 		// Execute the command and verify it shows a message
 		const result = await vscode.commands.executeCommand('dummy-extension.helloWorld');
@@ -30,5 +30,12 @@ describe('dummy extension', () => {
 	it('shows an information message when command is executed', async () => {
 		// Execute the hello world command
 		await vscode.commands.executeCommand('dummy-extension.helloWorld');
+	});
+
+	it('counts TODO comments in the workspace', async () => {
+		// In this repo, the workspace root is the sample project,
+		// which has two TODO comments in src/index.ts
+		const total = await vscode.commands.executeCommand('dummy-extension.countWorkspaceTodos');
+		expect(total).toBe(2);
 	});
 });

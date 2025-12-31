@@ -27,14 +27,12 @@
 	"scripts": {
 		"build": "vite build --mode development",
 		"build:watch": "vite build --mode development --watch",
-		"prerelease": "yarn build && yarn typecheck",
 		"typecheck": "tsc -p tsconfig.test.json --noEmit && tsc -p tsconfig.node.json --noEmit",
 		"typecheck:watch": "tsc -p tsconfig.test.json --noEmit --watch --preserveWatchOutput & tsc -p tsconfig.node.json --noEmit --watch --preserveWatchOutput",
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"lint": "eslint .",
-		"lint:fix": "eslint . --fix",
-		"format": "prettier --write ."
+		"lint:fix": "eslint . --fix"
 	},
 	"keywords": [
 		"vitest",
@@ -48,10 +46,10 @@
 		"@types/node": "^24.8.1",
 		"@types/ws": "^8.18.1",
 		"typescript": "^5.9.3",
-		"vite": "^7.2.6",
+		"vite": "^7.3.0",
 		"vite-plugin-dts": "^4.5.4",
-		"vite-tsconfig-paths": "^5.1.4",
-		"vitest": "^4.0.15"
+		"vite-tsconfig-paths": "^6.0.3",
+		"vitest": "^4.0.16"
 	},
 	"peerDependencies": {
 		"vitest": ">=3.2.4"
@@ -59,9 +57,9 @@
 	"dependencies": {
 		"@vscode/test-electron": "^2.5.2",
 		"core-js": "^3.47.0",
-		"devalue": "^5.5.0",
-		"indisposed": "^0.0.7",
+		"devalue": "^5.6.1",
+		"indisposed": "^0.1.0",
 		"ws": "^8.18.3",
-		"zod": "^4.1.13"
+		"zod": "^4.3.2"
 	}
 }

@@ -36,13 +36,21 @@ export const vitestVscodeConfigSchema = z
 		platform: z.string().optional(),
 		/**
 		 * Path where the downloaded VS Code instance is stored.
-		 * Defaults to `.vscode-test` within your working directory.
+		 * Defaults to `node_modules/.cache/.vscode-test` within your project
+		 * if a `node_modules` directory exists, otherwise `.vscode-test` in
+		 * your project root.
 		 */
 		cachePath: z.string().optional(),
 		/**
 		 * Number of milliseconds after which to time out if no data is received when downloading VS Code.
 		 */
 		timeout: z.number().optional(),
+		/**
+		 * Workspace root folder to open in VS Code when running tests.
+		 * If a relative path is provided, it is resolved against the Vitest
+		 * project root (i.e. your Vitest config directory).
+		 */
+		workspaceRoot: z.string().optional(),
 	})
 	.loose();
 

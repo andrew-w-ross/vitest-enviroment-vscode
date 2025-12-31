@@ -11,9 +11,8 @@
     - `packages/typescript-configs` - Shared TypeScript configuration files
 
 - **Key Artifacts:**
-    - `packages/vitest-environment-vscode/docs/design.md` for architecture details.
-    - `packages/vitest-environment-vscode/docs/roadmap.md` for delivery milestones.
-    - `packages/vitest-environment-vscode/src/` for implementation (pool entry point, VS Code worker, RPC bridge).
+    - `README.md` (root) for architecture details, repository layout, and the Mermaid sequence diagram under **How It Works**. This file is also copied into `packages/vitest-environment-vscode/README.md` during the release workflow, so when instructions mention "update the README" they refer to the root `README.md`.
+    - `packages/vitest-environment-vscode/src/` for implementation (pool entry point, VS Code worker, WebSocket bridge between Vitest and the VS Code Extension Host).
 
 ## Tooling Expectations
 
@@ -23,7 +22,6 @@
     - `yarn install` – install dependencies for all packages.
     - `yarn build` – produce production bundles for all packages (uses Turborepo).
     - `yarn build:watch` – run the development build/watch for all packages.
-    - `yarn prerelease` – run prerelease tasks for all packages.
     - `yarn typecheck` – run TypeScript type checking for all packages.
     - `yarn typecheck:watch` – run TypeScript type checking in watch mode for all packages.
     - `yarn test` – run tests for all packages.
@@ -32,6 +30,7 @@
     - `yarn lint:fix` – run ESLint and automatically fix issues.
     - `yarn format` – format code using Prettier.
     - `yarn format:check` – check code formatting without making changes.
+    - `yarn check` – full pre-commit check (format:check, lint, test).
 - To run commands for a specific package, use the `--filter` flag:
     - Example: `yarn build --filter=vitest-environment-vscode`
     - Example: `yarn test --filter=dummy-extension`
@@ -56,13 +55,14 @@
 
 ## Agent Execution Checklist
 
-1. Review `packages/vitest-environment-vscode/docs/design.md` to stay aligned with the current architecture.
+1. Review `README.md` (especially **How It Works** and **Repository Layout**) to stay aligned with the current architecture.
 2. Use editor tools (not raw grep) for symbol discovery per workspace guidelines.
 3. Prefer modifying files with provided apply/edit tools; avoid ad-hoc shell edits.
 4. Verify changes and ensure Mermaid diagrams render when modified.
 5. Confirm commands target the macOS `zsh` shell environment when needed.
 6. When working with packages, navigate to the specific package directory or use workspace commands.
 7. **Use Context7 for documentation:** When you need up-to-date library documentation or API references, use the Context7 MCP tools if available. These tools provide authoritative, current documentation for libraries and frameworks.
+8. Before wrapping up a change, run `yarn check` and fix any reported issues.
 
 ## Notes
 

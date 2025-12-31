@@ -30,7 +30,6 @@ const entry = Object.entries(pkg.exports as Record<string, { import?: string }>)
 export default defineConfig({
 	plugins: [
 		declarationPlugin,
-		//@ts-expect-error Plugins broken for now
 		tsconfigPaths({
 			configNames: ['tsconfig.app.json'],
 		}),
