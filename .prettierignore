@@ -1,0 +1,10 @@
+# Generated lockfile
+pnpm-lock.yaml
+
+# Build output
+dist/
+
+# Local tooling state
+.claude/
+.turbo/
+.vscode-test/

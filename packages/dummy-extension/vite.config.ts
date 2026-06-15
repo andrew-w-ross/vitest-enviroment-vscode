@@ -8,7 +8,7 @@ const __dirname = dirname(__filename);
 
 export default defineConfig({
 	build: {
-		target: 'node22',
+		target: 'node24',
 		lib: {
 			entry: {
 				extension: resolve(__dirname, 'src/extension.ts'),

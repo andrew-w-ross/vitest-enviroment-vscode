@@ -2,7 +2,7 @@ import { describe, expect, vi, test } from 'vitest';
 import type { AddressInfo } from 'node:net';
 import { WebSocketServer, WebSocket } from 'ws';
 import { createWebSocketServer, waitForWebSocketClient } from './websocket.js';
-import { EnviromentVscodeError } from '../errors.js';
+import { EnvironmentVscodeError } from '../errors.js';
 
 describe('createWebSocketServer', () => {
 	test('should create a WebSocketServer with correct configuration', async () => {
@@ -273,7 +273,7 @@ describe('waitForWebSocketClient', () => {
 		await new Promise((resolve) => setTimeout(resolve, 10));
 		await server[Symbol.asyncDispose]();
 
-		await expect(clientPromise).rejects.toThrow(EnviromentVscodeError);
+		await expect(clientPromise).rejects.toThrow(EnvironmentVscodeError);
 		await expect(clientPromise).rejects.toMatchObject({
 			type: 'client_connection',
 		});

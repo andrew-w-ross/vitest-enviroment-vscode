@@ -1,0 +1,13 @@
+packages:
+  - 'packages/*'
+
+# Only install versions published at least 3 days ago (supply-chain cooldown).
+minimumReleaseAge: 4320
+minimumReleaseAgeStrict: true
+
+overrides:
+  flatted: '^3.4.2'
+  picomatch: '^4.0.4'
+
+allowBuilds:
+  core-js: false

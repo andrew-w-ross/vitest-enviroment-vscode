@@ -2,14 +2,13 @@ import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve as resolvePath } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { isNullOrEmpty } from '~/utils/string';
-import { EnviromentVscodeError } from '~/errors';
-import { wait } from '~/utils/fn';
-import { waitForConnection } from '~/utils/websocket';
+import { isNullOrEmpty } from '#utils/string';
+import { EnvironmentVscodeError } from '#errors';
+import { wait } from '#utils/fn';
+import { waitForConnection } from '#utils/websocket';
 import { init, runBaseTests as vitestRunBaseTests } from 'vitest/worker';
 import type { ControlRequest } from './utils/workerRequestSerializer';
 import { deserialize, serialize } from './utils/workerRequestSerializer';
-import { invoke, once } from 'indisposed';
 
 const workerRequire = createRequire(import.meta.url);
 const WORKER_NAME = 'vitest-environment-vscode';
@@ -47,29 +46,59 @@ async function loadSetupEnvironment(): Promise<SetupEnvironment> {
 
 export async function run() {
 	const serverAddress = process.env.VITEST_VSCODE_ADDRESS;
-	if (isNullOrEmpty(serverAddress)) throw new EnviromentVscodeError('client_env');
+	if (isNullOrEmpty(serverAddress)) throw new EnvironmentVscodeError('client_env');
+	const token = process.env.VITEST_VSCODE_TOKEN ?? '';
 	if (process.env.VITEST_ENV_VSCODE_DEBUG === '1') {
 		console.log(`[${WORKER_NAME}] debug logging enabled`);
 	}
 
 	const ws = await waitForConnection(serverAddress);
 
-	const handShakePromise = invoke(async () => {
-		using message = once(ws, 'message');
-		using error = once(ws, 'error', true);
-		return await Promise.race([message, error]);
-	}).then(([data]) => deserialize(data));
+	// Attach a single persistent listener the moment we connect. Vitest sends
+	// `start` immediately after the handshake, so any frame that arrives in the
+	// window between the handshake and init() registering its own listener would
+	// otherwise be dropped, leaving the worker unresponsive and VS Code open.
+	// We intercept the handshake `ready_ack` here and buffer everything else
+	// until init() attaches, then replay it.
+	let acknowledged = false;
+	let resolveAck!: () => void;
+	const ackPromise = new Promise<void>((resolve) => {
+		resolveAck = resolve;
+	});
 
-	// Send ready signal to pool
-	for (let i = 0; i < 11; i++) {
-		ws.send(serialize({ type: 'ready' } satisfies ControlRequest));
-		const raceResult = await Promise.race([handShakePromise, wait(10)]);
-		if (raceResult != null && raceResult.type === 'ready_ack') {
-			break;
+	const listeners = new Set<(data: unknown) => void>();
+	const buffered: unknown[] = [];
+	let flushed = false;
+
+	ws.on('message', (data: unknown) => {
+		if (!acknowledged) {
+			let message: ControlRequest | undefined;
+			try {
+				message = deserialize(data) as ControlRequest;
+			} catch {
+				message = undefined;
+			}
+			if (message?.type === 'ready_ack') {
+				acknowledged = true;
+				resolveAck();
+				return;
+			}
 		}
-		if (i > 10) {
-			throw new EnviromentVscodeError('client_ack_timeout');
+		if (flushed) {
+			for (const listener of listeners) listener(data);
+		} else {
+			buffered.push(data);
 		}
+	});
+
+	// Announce readiness until the pool acknowledges, then stop.
+	const MAX_READY_ATTEMPTS = 50;
+	for (let attempt = 0; attempt < MAX_READY_ATTEMPTS && !acknowledged; attempt++) {
+		ws.send(serialize({ type: 'ready', token } satisfies ControlRequest));
+		await Promise.race([ackPromise, wait(10)]);
+	}
+	if (!acknowledged) {
+		throw new EnvironmentVscodeError('client_ack_timeout');
 	}
 
 	const runWithLogging = async (
@@ -91,10 +120,17 @@ export async function run() {
 				ws.send(response);
 			},
 			on: (callback) => {
-				ws.on('message', callback);
+				listeners.add(callback);
+				if (!flushed) {
+					flushed = true;
+					const pending = buffered.splice(0);
+					for (const data of pending) {
+						for (const listener of listeners) listener(data);
+					}
+				}
 			},
 			off: (callback) => {
-				ws.off('message', callback);
+				listeners.delete(callback);
 			},
 			teardown: () => {
 				resolve(undefined);
