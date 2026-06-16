@@ -54,23 +54,23 @@ jobs:
         run: |
           git checkout -B release-tmp
 
-      - name: Enable Corepack
-        run: corepack enable
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version-file: '.nvmrc'
-          cache: yarn
+          cache: pnpm
 
       - name: Install dependencies
-        run: yarn install --immutable
+        run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: yarn build
+        run: pnpm build
 
       - name: Run tests
-        run: xvfb-run -a yarn test
+        run: xvfb-run -a pnpm test
 
       - name: Configure git
         run: |
@@ -94,7 +94,7 @@ jobs:
             BUMP_TYPE="$VERSION_TYPE"
           fi
 
-          yarn workspace "$WORKSPACE_NAME" version "$BUMP_TYPE" --immediate
+          ( cd "$PACKAGE_DIR" && npm version "$BUMP_TYPE" --no-git-tag-version )
 
           NEW_VERSION=$(node -p "require('./$PACKAGE_DIR/package.json').version")
 
@@ -121,19 +121,21 @@ jobs:
           IS_PRERELEASE: ${{ steps.version.outputs.is_prerelease }}
           TOLERATE_REPUBLISH: ${{ github.event.inputs.tolerate_republish }}
           WORKSPACE_NAME: vitest-environment-vscode
+          VERSION: ${{ steps.version.outputs.value }}
         run: |
           set -euo pipefail
-          PUBLISH_FLAGS="--access public"
 
+          if [ "$TOLERATE_REPUBLISH" = "true" ] && npm view "$WORKSPACE_NAME@$VERSION" version >/dev/null 2>&1; then
+            echo "$WORKSPACE_NAME@$VERSION already on npm; tolerating and skipping publish."
+            exit 0
+          fi
+
+          PUBLISH_FLAGS="--access public --no-git-checks"
           if [ "$IS_PRERELEASE" = "true" ]; then
             PUBLISH_FLAGS="$PUBLISH_FLAGS --tag next"
           fi
 
-          if [ "$TOLERATE_REPUBLISH" = "true" ]; then
-            PUBLISH_FLAGS="$PUBLISH_FLAGS --tolerate-republish"
-          fi
-
-          yarn workspace "$WORKSPACE_NAME" npm publish $PUBLISH_FLAGS
+          pnpm --filter "$WORKSPACE_NAME" publish $PUBLISH_FLAGS
 
       - name: Restore package README
         if: always()
