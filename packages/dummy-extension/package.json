@@ -29,11 +29,11 @@
 	},
 	"devDependencies": {
 		"@repo/typescript-configs": "workspace:*",
-		"@types/node": "^24.8.1",
-		"@types/vscode": "^1.106.1",
-		"typescript": "^5.9.3",
-		"vite": "^7.2.6",
-		"vitest": "^4.0.15",
+		"@types/node": "^25.9.3",
+		"@types/vscode": "^1.120.0",
+		"typescript": "^6.0.3",
+		"vite": "^8.0.16",
+		"vitest": "^4.1.8",
 		"vitest-environment-vscode": "workspace:*"
 	}
 }

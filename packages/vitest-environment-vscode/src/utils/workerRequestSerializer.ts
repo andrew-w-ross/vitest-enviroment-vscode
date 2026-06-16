@@ -4,6 +4,7 @@ import type { WorkerRequest } from 'vitest/node';
 export type ControlRequest =
 	| {
 			type: 'ready';
+			token: string;
 	  }
 	| {
 			type: 'ready_ack';

@@ -1,10 +1,10 @@
 import { WebSocket, WebSocketServer } from 'ws';
-import { EnviromentVscodeError } from '../errors';
+import { EnvironmentVscodeError } from '../errors';
 import { invoke, once, toAsyncDisposable } from 'indisposed';
 
 /**
  * Start a localhost WebSocket server on a random port and return an async disposable wrapper.
- * Rejects with `EnviromentVscodeError` when the server fails to bind.
+ * Rejects with `EnvironmentVscodeError` when the server fails to bind.
  */
 export async function createWebSocketServer() {
 	const wss = new WebSocketServer({ host: '127.0.0.1', port: 0 });
@@ -29,7 +29,7 @@ export async function createWebSocketServer() {
 
 /**
  * Wait for the next inbound client connection and return an async disposable WebSocket instance.
- * Throws `EnviromentVscodeError` if the server closes or errors before a client appears.
+ * Throws `EnvironmentVscodeError` if the server closes or errors before a client appears.
  */
 export async function waitForWebSocketClient(wss: WebSocketServer) {
 	const ws = await invoke(async () => {
@@ -41,7 +41,7 @@ export async function waitForWebSocketClient(wss: WebSocketServer) {
 			connection,
 			serverError,
 			serverClose.then(() => {
-				throw new EnviromentVscodeError('client_connection');
+				throw new EnvironmentVscodeError('client_connection');
 			}),
 		]);
 
@@ -60,7 +60,7 @@ export async function waitForWebSocketClient(wss: WebSocketServer) {
 
 /**
  * Connect to a remote WebSocket endpoint and wait until the handshake finishes.
- * Throws `EnviromentVscodeError` if the remote side shuts down before opening.
+ * Throws `EnvironmentVscodeError` if the remote side shuts down before opening.
  */
 export async function waitForConnection(address: string) {
 	const ws = new WebSocket(address);
@@ -74,7 +74,7 @@ export async function waitForConnection(address: string) {
 			connection,
 			serverError,
 			serverClose.then(() => {
-				throw new EnviromentVscodeError('client_connection');
+				throw new EnvironmentVscodeError('client_connection');
 			}),
 		]);
 	});

@@ -1,4 +1,3 @@
-import type { PoolOptions } from 'vitest/node';
 import { z } from 'zod';
 
 export const vitestVscodeConfigSchema = z
@@ -47,16 +46,3 @@ export const vitestVscodeConfigSchema = z
 	.loose();
 
 export type VitestVscodeConfig = z.infer<typeof vitestVscodeConfigSchema>;
-
-export function config(poolOptions?: PoolOptions & VitestVscodeConfig) {
-	// Allow VSCODE_VERSION environment variable to override the version
-	const options: Partial<VitestVscodeConfig> = poolOptions ? { ...poolOptions } : {};
-	if (process.env.VSCODE_VERSION) {
-		options.version = process.env.VSCODE_VERSION;
-	}
-
-	return {
-		pool: import.meta.resolve('vitest-environment-vscode'),
-		poolOptions: options,
-	};
-}

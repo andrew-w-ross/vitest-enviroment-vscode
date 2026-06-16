@@ -1,6 +1,5 @@
 import { defineConfig } from 'vitest/config';
 import type { Plugin as VitestPlugin } from 'vitest/config';
-import tsconfigPaths from 'vite-tsconfig-paths';
 import dts from 'vite-plugin-dts';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -28,15 +27,9 @@ const entry = Object.entries(pkg.exports as Record<string, { import?: string }>)
 );
 
 export default defineConfig({
-	plugins: [
-		declarationPlugin,
-		//@ts-expect-error Plugins broken for now
-		tsconfigPaths({
-			configNames: ['tsconfig.app.json'],
-		}),
-	],
+	plugins: [declarationPlugin],
 	build: {
-		target: 'node22',
+		target: 'node24',
 		lib: {
 			entry,
 			formats: ['es'],
