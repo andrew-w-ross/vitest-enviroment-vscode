@@ -3,6 +3,15 @@
 	"version": "0.1.2",
 	"type": "module",
 	"description": "A Vitest environment for VS Code",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/andrew-w-ross/vitest-enviroment-vscode.git",
+		"directory": "packages/vitest-environment-vscode"
+	},
+	"bugs": {
+		"url": "https://github.com/andrew-w-ross/vitest-enviroment-vscode/issues"
+	},
+	"homepage": "https://github.com/andrew-w-ross/vitest-enviroment-vscode#readme",
 	"main": "./dist/index",
 	"types": "./dist/index.d.ts",
 	"exports": {
